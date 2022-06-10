@@ -1,3 +1,7 @@
++++
+summary = "a migration guide from Rocket v0.4 to v0.5"
++++
+
 # Upgrading
 
 Rocket v0.5 bring many new features and improvements over Rocket v0.4. Rocket
@@ -12,7 +16,7 @@ This guide is _not_ intended to replace, but instead complement, a reading of
 the [CHANGELOG]. The [CHANGELOG] should be considered required reading for all
 developers wishing to migrate their applications to Rocket v0.5.
 
-[CHANGELOG]: @github/CHANGELOG.md
+[CHANGELOG]: @git/v0.5/CHANGELOG.md
 
 ! note Don't panic!
 
@@ -26,7 +30,7 @@ developers wishing to migrate their applications to Rocket v0.5.
 
 Rocket v0.5 incorporates an improved module structure and crate ecosystem.
 Modules and items that have been moved or removed will trigger a compiler error.
-We encourage users to search through the [CHANGELOG] or [API docs](@api/rocket)
+We encourage users to search through the [CHANGELOG] or [API docs](@api/v0.5/rocket/)
 for the v0.5 analog. All previously existing functionality, except for that
 incompatible with async I/O, is available in v0.5.
 
@@ -74,11 +78,11 @@ with the `rocket` crate.
 All features previously in `rocket_contrib` are available. Consult the [contrib
 graduation] section of the CHANGELOG for full details.
 
-[`rocket_dyn_templates`]: @api/rocket_dyn_templates
-[`rocket_sync_db_pools`]: @api/rocket_sync_db_pools
-[`rocket_db_pools`]: @api/rocket_db_pools
-[features in `rocket`]: @api/rocket/#features
-[contrib graduation]: @github/CHANGELOG.md#contrib-graduation
+[`rocket_dyn_templates`]: @api/v0.5/rocket_dyn_templates/
+[`rocket_sync_db_pools`]: @api/v0.5/rocket_sync_db_pools/
+[`rocket_db_pools`]: @api/v0.5/rocket_db_pools/
+[features in `rocket`]: @api/v0.5/rocket/#features
+[contrib graduation]: @git/v0.5/CHANGELOG.md#contrib-graduation
 
 ## Stable and Async Support
 
@@ -199,9 +203,9 @@ was previously the `main` function:
 + }
 ```
 
-[`launch`]: @api/rocket/attr.launch.html
-[`main`]: @api/rocket/attr.main.html
-[`rocket::build()`]: @api/rocket/struct.Rocket.html#method.build
+[`launch`]: @api/v0.5/rocket/attr.launch.html
+[`main`]: @api/v0.5/rocket/attr.main.html
+[`rocket::build()`]: @api/v0.5/rocket/struct.Rocket.html#method.build
 
 ### Blocking I/O
 
@@ -281,7 +285,7 @@ async fn index() -> Option<NamedFile> {
 
 [`tokio`]: https://tokio.rs
 [configurable number of worker threads]: ../configuration/#workers
-[`NamedFile`]: @api/rocket/fs/struct.NamedFile.html
+[`NamedFile`]: @api/v0.5/rocket/fs/struct.NamedFile.html
 [`rocket::tokio::task::spawn_blocking`]: @tokio/task/fn.spawn_blocking.html
 
 ### Blocking Compute
@@ -348,17 +352,17 @@ Unfortunately, rustdoc does not provide a mechanism to render the source as it
 is written. As such, we encourage all authors to use the examples as the source
 of truth for trait and method signatures.
 
-[`async_trait`]: @api/rocket/attr.async_trait.html
-[`FromRequest`]: @api/rocket/request/trait.FromRequest.html
-[`Fairing`]: @api/rocket/fairing/trait.Fairing.html
+[`async_trait`]: @api/v0.5/rocket/attr.async_trait.html
+[`FromRequest`]: @api/v0.5/rocket/request/trait.FromRequest.html
+[`Fairing`]: @api/v0.5/rocket/fairing/trait.Fairing.html
 
 ## Configuration
 
 Rocket's configuration system has been entirely revamped for v0.5. The
-[configuration](../configuration) section of the guide contains a full
-walkthrough of the new system while the [general changes] section of the
-[CHANGELOG] contains further details on configuration changes. We call out the
-most important of these changes here. All users _must_:
+[configuration] section of the guide contains a full walkthrough of the new
+system while the [general changes] section of the [CHANGELOG] contains further
+details on configuration changes. We call out the most important of these
+changes here. All users _must_:
 
   * Replace the `ROCKET_ENV` environment variable with `ROCKET_PROFILE`.
   * Replace the `ROCKET_LOG` environment variable with `ROCKET_LOG_LEVEL`.
@@ -384,14 +388,15 @@ As opposed to environments, profiles:
   * Have a `default` profile with fallback values for all profiles.
   * Have a `global` profile with overrides for all profiles.
 
-Authors should read the new [configuration](../configuration) section of the
-guide to determine the scope of changes required. This likely includes:
+Authors should read the new [configuration] section of the guide to determine
+the scope of changes required. This likely includes:
 
   * Defining most configuration in the `default` profile instead.
   * Using the `debug` profile where `dev` or `development` was used.
   * Using the `release` profile where `prod` or `production` was used.
 
-[general changes]: @github/CHANGELOG.md#general
+[configuration]: ../configuration/
+[general changes]: @git/v0.5/CHANGELOG.md#general
 [typed extraction]: ../configuration/#extracting-values
 
 ### Typed Extraction
@@ -449,10 +454,10 @@ Rocket v0.5 brings several major changes that affect routing:
   6. The [`register()`] method require a path to [scope catchers] under. Using
      `"/"` emulates the previous behavior.
 
-[Default ranking]: ../requests#default-ranking
-[`FromForm`]: @api/rocket/form/trait.FromForm.html
-[`FromParam`]: @api/rocket/request/trait.FromParam.html
-[`register()`]: @api/rocket/struct.Rocket.html#method.register
+[Default ranking]: ../requests/#default-ranking
+[`FromForm`]: @api/v0.5/rocket/form/trait.FromForm.html
+[`FromParam`]: @api/v0.5/rocket/request/trait.FromParam.html
+[`register()`]: @api/v0.5/rocket/struct.Rocket.html#method.register
 [scope catchers]: ../requests/#scoping
 
 ### Default Ranks
@@ -563,7 +568,7 @@ A form that previously used `String` becomes:
 ### Queries as Forms
 
 Query strings in Rocket v0.5 are in parity with forms and support their [full
-breadth](../requests#forms). Single segment query parameters (`<foo>`) should
+breadth](../requests/#forms). Single segment query parameters (`<foo>`) should
 require little to no changes, except that they now support collections,
 structures, and any other `FromForm` type. This implies that the majority, if
 not _all_ custom `FromQuery` implementations, should be derivable via `FromForm`
@@ -592,10 +597,10 @@ struct Person { /* .. */ }
 
 Rocket v0.5 introduces entirely revamped [forms] with support for:
 
-  * [Multipart uploads.](../requests#multipart)
-  * [Collections: maps, vectors, and more.](../requests#collections)
-  * [Nesting.](../requests#nesting)
-  * [Ad-Hoc validation.](../requests#ad-hoc-validation)
+  * [Multipart uploads.](../requests/#multipart)
+  * [Collections: maps, vectors, and more.](../requests/#collections)
+  * [Nesting.](../requests/#nesting)
+  * [Ad-Hoc validation.](../requests/#ad-hoc-validation)
 
 Additionally, the [`FromForm` derive] has been substantially improved so that
 nearly all custom implementations of `FromForm` or [`FromFormField`], which
@@ -603,7 +608,7 @@ replaces `FromFormValue` from v0.4, can be derived. Altogether, this means that
 any external crate dependency for form handling and most custom `FromForm` or
 `FromFormValue` implementations are unnecessary and should be removed.
 
-[`FromFormField`]: @api/rocket/form/trait.FromFormField.html
+[`FromFormField`]: @api/v0.5/rocket/form/trait.FromFormField.html
 
 ### Multipart
 
@@ -627,7 +632,7 @@ struct Upload<'r> {
 fn upload(upload: Form<Upload<'_>>) { /* .. */ }
 ```
 
-[`TempFile`]: @api/rocket/fs/enum.TempFile.html
+[`TempFile`]: @api/v0.5/rocket/fs/enum.TempFile.html
 
 ### Field Validation
 
@@ -670,9 +675,9 @@ struct MyForm {
 }
 ```
 
-[forms]: ../requests#forms
-[`FromForm` derive]: @api/rocket/derive.FromForm.html
-[deriving `FromForm`]: @api/rocket/derive.FromForm.html
+[forms]: ../requests/#forms
+[`FromForm` derive]: @api/v0.5/rocket/derive.FromForm.html
+[deriving `FromForm`]: @api/v0.5/rocket/derive.FromForm.html
 
 ## Notable New Features
 
@@ -711,9 +716,9 @@ impl Sentinel for MyResponder {
 }
 ```
 
-[sentinels]: @api/rocket/trait.Sentinel.html
-[`Sentinel`]: @api/rocket/trait.Sentinel.html
-[`&State<T>`]: @api/rocket/struct.State.html
+[sentinels]: @api/v0.5/rocket/trait.Sentinel.html
+[`Sentinel`]: @api/v0.5/rocket/trait.Sentinel.html
+[`&State<T>`]: @api/v0.5/rocket/struct.State.html
 
 ### More Typed URIs
 
@@ -772,12 +777,12 @@ URI-references. Additionally, all URI types are now `Serialize` and
 `Deserialize`, allowing URIs to be used in configuration and passed over the
 wire.
 
-[`Redirect`]: @api/rocket/response/struct.Redirect.html
-[`Client`]: @api/rocket/local/index.html
-[prefixes and suffixes]: @api/rocket/macro.uri.html#prefixes-and-suffixes
-[`uri!()`]: @api/rocket/macro.uri.html
-[URI types]: @api/rocket/http/uri/index.html
-[`Reference`]: @api/rocket/http/uri/struct.Reference.html
+[`Redirect`]: @api/v0.5/rocket/response/struct.Redirect.html
+[`Client`]: @api/v0.5/rocket/local/index.html
+[prefixes and suffixes]: @api/v0.5/rocket/macro.uri.html#prefixes-and-suffixes
+[`uri!()`]: @api/v0.5/rocket/macro.uri.html
+[URI types]: @api/v0.5/rocket/http/uri/index.html
+[`Reference`]: @api/v0.5/rocket/http/uri/struct.Reference.html
 
 ### Real-Time Streams
 
@@ -805,9 +810,9 @@ fn stream(n: Option<u64>) -> EventStream![] {
 }
 ```
 
-[streams]: @api/rocket/response/stream/index.html
+[streams]: @api/v0.5/rocket/response/stream/index.html
 [async streams]: ../responses/#async-streams
-[chat example]: @example/chat
+[chat example]: @git/v0.5/examples/chat
 
 ### WebSockets
 
@@ -849,16 +854,14 @@ fn echo_stream(ws: ws::WebSocket) -> ws::Stream!['static] {
 
 For complete usage details, see the [`rocket_ws`] documentation.
 
-[upgrade API]: @api/rocket/response/struct.Response.html#upgrading
-[`rocket_ws`]: @api/rocket_ws
+[upgrade API]: @api/v0.5/rocket/response/struct.Response.html#upgrading
+[`rocket_ws`]: @api/v0.5/rocket_ws/
 
 ## Getting Help
 
 If you run into any issues upgrading, we encourage you to ask questions via
-[GitHub discussions] or via chat at [`#rocket:mozilla.org`] on Matrix or the
-bridged [`#rocket`] IRC channel at `irc.libera.chat`. The [FAQ](../faq/) also
-provides answers to commonly asked questions.
+[GitHub discussions] or via chat at [`#rocket:mozilla.org`] on Matrix. The
+[FAQ](../faq/) also provides answers to commonly asked questions.
 
-[GitHub discussions]: https://github.com/rwf2/Rocket/discussions
-[`#rocket:mozilla.org`]: https://chat.mozilla.org/#/room/#rocket:mozilla.org
-[`#rocket`]: https://kiwiirc.com/client/irc.libera.chat/#rocket
+[GitHub discussions]: @github/discussions
+[`#rocket:mozilla.org`]: @chat
