@@ -56,7 +56,7 @@ rocket = "0.5.0"
   [dependencies]
   `
   `
-  rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "######" }
+  rocket = { git = "https://github.com/rwf2/Rocket", rev = "######" }
   `
 
 Modify `src/main.rs` so that it contains the code for the Rocket `Hello, world!`
