@@ -123,6 +123,7 @@ pub mod data;
 pub mod handler;
 pub mod fairing;
 pub mod error;
+#[cfg(doctest)] mod guide;
 
 // Reexport of HTTP everything.
 pub mod http {
@@ -147,10 +148,10 @@ mod ext;
 #[doc(inline)] pub use outcome::Outcome;
 #[doc(inline)] pub use data::Data;
 #[doc(inline)] pub use config::Config;
-pub use router::Route;
-pub use request::{Request, State};
-pub use catcher::Catcher;
-pub use rocket::Rocket;
+#[doc(inline)] pub use router::Route;
+#[doc(inline)] pub use request::{Request, State};
+#[doc(inline)] pub use catcher::Catcher;
+#[doc(inline)] pub use rocket::Rocket;
 
 /// Alias to [`Rocket::ignite()`] Creates a new instance of `Rocket`.
 pub fn ignite() -> Rocket {

@@ -140,6 +140,7 @@ structure that represents a _probably_ unique ID. Read through the code, then
 copy/paste it into a new file named `paste_id.rs` in the `src/` directory:
 
 ```rust
+# extern crate rand;
 use std::fmt;
 use std::borrow::Cow;
 
@@ -177,11 +178,13 @@ impl<'a> fmt::Display for PasteId<'a> {
 Then, in `src/main.rs`, add the following after `extern crate rocket`:
 
 ```rust
+# mod _foo {
 # /*
 mod paste_id;
 # */ mod paste_id { pub struct PasteId; }
 
-use paste_id::PasteId;
+use self::paste_id::PasteId;
+# }
 ```
 
 Finally, add a dependency for the `rand` crate to the `Cargo.toml` file:

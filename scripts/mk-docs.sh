@@ -13,14 +13,15 @@ if [ "${1}" != "-d" ]; then
   # We need to clean-up beforehand so we don't get all of the dependencies.
   echo ":::: Cleaning up before documenting..."
   cargo clean
-  cargo update
+  # cargo update
 fi
 
 # Generate the rustdocs for all of the crates.
 echo ":::: Generating the docs..."
 pushd "${PROJECT_ROOT}" > /dev/null 2>&1
 RUSTDOCFLAGS="-Z unstable-options --crate-version ${DOC_VERSION}" \
-  cargo doc -Zrustdoc-map -p rocket -p rocket_contrib --no-deps --all-features
+  cargo doc -Zrustdoc-map -p rocket --no-deps
+  cargo doc -Zrustdoc-map -p rocket_contrib --no-deps --all-features
 popd > /dev/null 2>&1
 
 # Blank index, for redirection.

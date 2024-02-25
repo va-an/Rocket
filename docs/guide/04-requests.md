@@ -341,6 +341,7 @@ route using `Option<T>` looks as follows:
 ```rust
 # #![feature(decl_macro)]
 # #[macro_use] extern crate rocket;
+# #[macro_use] extern crate serde;
 # fn main() {}
 
 #[get("/hello?wave&<name>")]
@@ -1045,6 +1046,7 @@ Handling JSON data is no harder: simply use the
 ```rust
 # #![feature(decl_macro)]
 # #[macro_use] extern crate rocket;
+# #[macro_use] extern crate serde;
 # extern crate rocket_contrib;
 # fn main() {}
 

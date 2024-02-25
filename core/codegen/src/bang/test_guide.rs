@@ -12,11 +12,7 @@ pub fn _macro(input: TokenStream) -> Result<TokenStream> {
     let modules = entry_to_modules(&root)
         .map_err(|e| root.span().unstable().error(format!("failed to read: {}", e)))?;
 
-    Ok(quote_spanned!(root.span() =>
-        #[allow(dead_code)]
-        #[allow(non_camel_case_types)]
-        mod test_site_guide { #(#modules)* }
-    ).into())
+    Ok(quote_spanned!(root.span() => #(#modules)*).into())
 }
 
 fn entry_to_modules(pat: &LitStr) -> std::result::Result<Vec<TokenStream2>, Box<dyn Error>> {
@@ -36,6 +32,8 @@ fn entry_to_modules(pat: &LitStr) -> std::result::Result<Vec<TokenStream2>, Box<
         let ident = Ident::new(&name, pat.span());
         let full_path = Path::new(&manifest_dir).join(&path).display().to_string();
         modules.push(quote_spanned!(pat.span() =>
+            #[allow(dead_code)]
+            #[allow(non_camel_case_types)]
             #[doc = include_str!(#full_path)]
             struct #ident;
         ))

@@ -341,6 +341,7 @@ write:
 # #![feature(decl_macro)]
 # #[macro_use] extern crate rocket;
 # #[macro_use] extern crate rocket_contrib;
+# #[macro_use] extern crate serde;
 # fn main() {}
 
 use serde::Serialize;
@@ -403,6 +404,7 @@ fairings. To attach the template fairing, simply call
 ```rust
 # #![feature(proc_macro_hygiene, decl_macro)]
 # #[macro_use] extern crate rocket;
+# #[macro_use] extern crate rocket_contrib;
 
 # use rocket_contrib::templates::Template;
 
@@ -422,8 +424,7 @@ used.
 ! note: The name of the template _does not_ include its extension.
 
   For a template file named `index.html.tera`, call `render("index")` and use
-  the name `"index"` in templates, i.e, `{% extends "index" %}` or `{% extends
-  "base" %}` for `base.html.tera`.
+  the name `"index"` in templates, i.e, `extends "base"` for `base.html.tera`.
 
 ### Live Reloading
 

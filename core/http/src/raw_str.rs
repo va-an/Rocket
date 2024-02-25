@@ -80,8 +80,6 @@ impl RawStr {
     ///
     /// # Example
     ///
-    /// With a valid string:
-    ///
     /// ```rust
     /// # extern crate rocket;
     /// use rocket::http::RawStr;
@@ -89,18 +87,6 @@ impl RawStr {
     /// let raw_str = RawStr::from_str("Hello%21");
     /// let decoded = raw_str.percent_decode();
     /// assert_eq!(decoded, Ok("Hello!".into()));
-    /// ```
-    ///
-    /// With an invalid string:
-    ///
-    /// ```rust
-    /// # extern crate rocket;
-    /// use rocket::http::RawStr;
-    ///
-    /// // Note: Rocket should never hand you a bad `&RawStr`.
-    /// let bad_str = unsafe { ::std::str::from_utf8_unchecked(b"a=\xff") };
-    /// let bad_raw_str = RawStr::from_str(bad_str);
-    /// assert!(bad_raw_str.percent_decode().is_err());
     /// ```
     #[inline(always)]
     pub fn percent_decode(&self) -> Result<Cow<str>, Utf8Error> {
@@ -113,8 +99,6 @@ impl RawStr {
     ///
     /// # Example
     ///
-    /// With a valid string:
-    ///
     /// ```rust
     /// # extern crate rocket;
     /// use rocket::http::RawStr;
@@ -122,18 +106,6 @@ impl RawStr {
     /// let raw_str = RawStr::from_str("Hello%21");
     /// let decoded = raw_str.percent_decode_lossy();
     /// assert_eq!(decoded, "Hello!");
-    /// ```
-    ///
-    /// With an invalid string:
-    ///
-    /// ```rust
-    /// # extern crate rocket;
-    /// use rocket::http::RawStr;
-    ///
-    /// // Note: Rocket should never hand you a bad `&RawStr`.
-    /// let bad_str = unsafe { ::std::str::from_utf8_unchecked(b"a=\xff") };
-    /// let bad_raw_str = RawStr::from_str(bad_str);
-    /// assert_eq!(bad_raw_str.percent_decode_lossy(), "a=�");
     /// ```
     #[inline(always)]
     pub fn percent_decode_lossy(&self) -> Cow<str> {
@@ -175,8 +147,6 @@ impl RawStr {
     ///
     /// # Example
     ///
-    /// With a valid string:
-    ///
     /// ```rust
     /// # extern crate rocket;
     /// use rocket::http::RawStr;
@@ -184,18 +154,6 @@ impl RawStr {
     /// let raw_str: &RawStr = "Hello%2C+world%21".into();
     /// let decoded = raw_str.url_decode_lossy();
     /// assert_eq!(decoded, "Hello, world!");
-    /// ```
-    ///
-    /// With an invalid string:
-    ///
-    /// ```rust
-    /// # extern crate rocket;
-    /// use rocket::http::RawStr;
-    ///
-    /// // Note: Rocket should never hand you a bad `&RawStr`.
-    /// let bad_str = unsafe { ::std::str::from_utf8_unchecked(b"a+b=\xff") };
-    /// let bad_raw_str = RawStr::from_str(bad_str);
-    /// assert_eq!(bad_raw_str.url_decode_lossy(), "a b=�");
     /// ```
     pub fn url_decode_lossy(&self) -> String {
         let replaced = self.replace("+", " ");

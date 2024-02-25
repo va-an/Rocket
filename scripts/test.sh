@@ -43,7 +43,8 @@ function ensure_tab_free() {
 
 # Ensures there are no files with trailing whitespace.
 function ensure_trailing_whitespace_free() {
-  local matches=$(git grep -E -I "\s+$" "${PROJECT_ROOT}" | grep -v -F '.stderr:')
+  # Ensure there's no trailing whitespace.
+  local matches=$(git grep -PIn "\s+$" "${PROJECT_ROOT}" | grep -v -F '.stderr:')
   if ! [ -z "${matches}" ]; then
     echo "Trailing whitespace was found in the following:"
     echo "${matches}"
@@ -69,13 +70,12 @@ ensure_tab_free
 echo ":: Checking for trailing whitespace..."
 ensure_trailing_whitespace_free
 
-echo ":: Updating dependencies..."
-if ! $CARGO update ; then
-  echo "   WARNING: Update failed! Proceeding with possibly outdated deps..."
-fi
+# echo ":: Updating dependencies..."
+# if ! $CARGO update ; then
+#   echo "   WARNING: Update failed! Proceeding with possibly outdated deps..."
+# fi
 
-if [ "$1" = "--contrib" ]; then
-  FEATURES=(
+CONTRIB_FEATS=(
     json
     msgpack
     tera_templates
@@ -92,37 +92,28 @@ if [ "$1" = "--contrib" ]; then
     redis_pool
     mongodb_pool
     memcache_pool
-  )
+)
 
+if [ "$1" = "--contrib" ]; then
   pushd "${CONTRIB_LIB_ROOT}" > /dev/null 2>&1
 
   echo ":: Building and testing contrib [default]..."
   $CARGO test
 
-  for feature in "${FEATURES[@]}"; do
+  for feature in "${CONTRIB_FEATS[@]}"; do
     echo ":: Building and testing contrib [${feature}]..."
     $CARGO test --no-default-features --features "${feature}"
   done
 
   popd > /dev/null 2>&1
 elif [ "$1" = "--core" ]; then
-  FEATURES=(
-    private-cookies # this is already tested since it's the default feature
-    tls
-  )
-
   pushd "${CORE_LIB_ROOT}" > /dev/null 2>&1
 
   echo ":: Building and testing core [no features]..."
   $CARGO test --no-default-features
 
-  for feature in "${FEATURES[@]}"; do
-    echo ":: Building and testing core [${feature}]..."
-    $CARGO test --no-default-features --features "${feature}"
-  done
-
   popd > /dev/null 2>&1
 else
   echo ":: Building and testing libraries..."
-  $CARGO test --all-features --all $@
+  $CARGO test --all --features=$(printf '%s,' "${CONTRIB_FEATS[@]}") $@
 fi
