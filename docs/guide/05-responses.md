@@ -6,7 +6,7 @@ trait can be returned, including your own. In this section, we describe the
 `Responder` trait as well as several useful `Responder`s provided by Rocket.
 We'll also briefly discuss how to implement your own `Responder`.
 
-[`Responder`]: https://api.rocket.rs/rocket/response/trait.Responder.html
+[`Responder`]: @api/v0.3/rocket/response/trait.Responder.html
 
 ## Responder
 
@@ -17,7 +17,7 @@ decides which to use. For instance, `String` uses a fixed-sized body, while
 `File` uses a streamed response. Responders may dynamically adjust their
 responses according to the incoming `Request` they are responding to.
 
-[`Response`]: https://api.rocket.rs/rocket/response/struct.Response.html
+[`Response`]: @api/v0.3/rocket/response/struct.Response.html
 
 ### Wrapping
 
@@ -31,7 +31,7 @@ struct WrappingResponder<R>(R);
 
 A wrapping responder modifies the response returned by `R` before responding
 with that same response. For instance, Rocket provides `Responder`s in the
-[`status` module](https://api.rocket.rs/rocket/response/status/index.html) that
+[`status` module](@api/v0.3/rocket/response/status/index.html) that
 override the status code of the wrapped `Responder`. As an example, the
 [`Accepted`] type sets the status to `202 - Accepted`. It can be used as
 follows:
@@ -46,7 +46,7 @@ fn new(id: usize) -> status::Accepted<String> {
 ```
 
 Similarly, the types in the [`content`
-module](https://api.rocket.rs/rocket/response/content/index.html) can be used to
+module](@api/v0.3/rocket/response/content/index.html) can be used to
 override the Content-Type of a response. For instance, to set the Content-Type
 an `&'static str` to JSON, you can use the [`content::Json`] type as follows:
 
@@ -59,14 +59,14 @@ fn json() -> content::Json<&'static str> {
 }
 ```
 
-[`Accepted`]: https://api.rocket.rs/rocket/response/status/struct.Accepted.html
-[`content::Json`]: https://api.rocket.rs/rocket/response/content/struct.Json.html
+[`Accepted`]: @api/v0.3/rocket/response/status/struct.Accepted.html
+[`content::Json`]: @api/v0.3/rocket/response/content/struct.Json.html
 
 ### Errors
 
 Responders may fail; they need not _always_ generate a response. Instead, they
 can return an `Err` with a given status code. When this happens, Rocket forwards
-the request to the [error catcher](/guide/requests/#error-catchers) for the
+the request to the [error catcher](../requests/#error-catchers) for the
 given status code.
 
 If an error catcher has been registered for the given status code, Rocket will
@@ -78,7 +78,7 @@ for a custom status code, Rocket uses the **500** error catcher to return a
 response.
 
 While not encouraged, you can also forward a request to a catcher manually by
-using the [`Failure`](https://api.rocket.rs/rocket/response/struct.Failure.html)
+using the [`Failure`](@api/v0.3/rocket/response/struct.Failure.html)
 type. For instance, to forward to the catcher for **406 - Not Acceptable**, you
 would write:
 
@@ -181,13 +181,13 @@ many of these responders in the [`response`] module. Among these are:
   * [`status`] - Contains types that override the status code of a response.
   * [`Flash`] - Sets a "flash" cookie that is removed when accessed.
 
-[`status`]: https://api.rocket.rs/rocket/response/status/index.html
-[`response`]: https://api.rocket.rs/rocket/response/index.html
-[`NamedFile`]: https://api.rocket.rs/rocket/response/struct.NamedFile.html
-[`Content`]: https://api.rocket.rs/rocket/response/struct.Content.html
-[`Redirect`]: https://api.rocket.rs/rocket/response/struct.Redirect.html
-[`Stream`]: https://api.rocket.rs/rocket/response/struct.Stream.html
-[`Flash`]: https://api.rocket.rs/rocket/response/struct.Flash.html
+[`status`]: @api/v0.3/rocket/response/status/index.html
+[`response`]: @api/v0.3/rocket/response/index.html
+[`NamedFile`]: @api/v0.3/rocket/response/struct.NamedFile.html
+[`Content`]: @api/v0.3/rocket/response/struct.Content.html
+[`Redirect`]: @api/v0.3/rocket/response/struct.Redirect.html
+[`Stream`]: @api/v0.3/rocket/response/struct.Stream.html
+[`Flash`]: @api/v0.3/rocket/response/struct.Flash.html
 
 ### Streaming
 
@@ -205,7 +205,7 @@ fn stream() -> io::Result<Stream<UnixStream>> {
 
 ```
 
-[`rocket_contrib`]: https://api.rocket.rs/rocket_contrib/index.html
+[`rocket_contrib`]: @api/v0.3/rocket_contrib/index.html
 
 ### JSON
 
@@ -233,10 +233,10 @@ fails, a **500 - Internal Server Error** is returned.
 
 The [JSON example on GitHub] provides further illustration.
 
-[`JSON`]: https://api.rocket.rs/rocket_contrib/struct.Json.html
+[`JSON`]: @api/v0.3/rocket_contrib/struct.Json.html
 [`Serialize`]: https://docs.serde.rs/serde/trait.Serialize.html
 [`serde`]: https://docs.serde.rs/serde/
-[JSON example on GitHub]: https://github.com/SergioBenitez/Rocket/tree/v0.3.17/examples/json
+[JSON example on GitHub]: @git/v0.3/examples/json
 
 ### Templates
 
@@ -264,7 +264,7 @@ example, if a file ends with `.hbs`, Handlebars is used, while if a file ends
 with `.tera`, Tera is used.
 
 For templates to be properly registered, the template fairing must be attached
-to the instance of Rocket. The [Fairings](/guide/fairings) sections of the guide
+to the instance of Rocket. The [Fairings](../fairings/) sections of the guide
 provides more information on fairings. To attach the template fairing, simply
 call `.attach(Template::fairing())` on an instance of `Rocket` as follows:
 
@@ -279,7 +279,7 @@ fn main() {
 The [`Template`] API
 documentation contains more information about templates, while the [Handlebars
 Templates example on
-GitHub](https://github.com/SergioBenitez/Rocket/tree/v0.3.17/examples/handlebars_templates)
+GitHub](@git/v0.3/examples/handlebars_templates)
 is a fully composed application that makes use of Handlebars templates.
 
-[`Template`]: https://api.rocket.rs/rocket_contrib/struct.Template.html
+[`Template`]: @api/v0.3/rocket_contrib/struct.Template.html

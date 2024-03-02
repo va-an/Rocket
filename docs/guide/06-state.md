@@ -22,7 +22,7 @@ The process for using managed state is simple:
 ### Adding State
 
 To instruct Rocket to manage state for your application, call the
-[`manage`](https://api.rocket.rs/rocket/struct.Rocket.html#method.manage) method
+[`manage`](@api/v0.3/rocket/struct.Rocket.html#method.manage) method
 on an instance of `Rocket`. For example, to ask Rocket to manage a `HitCount`
 structure with an internal `AtomicUsize` with an initial value of `0`, we can
 write the following:
@@ -48,8 +48,8 @@ rocket::ignite()
 ### Retrieving State
 
 State that is being managed by Rocket can be retrieved via the
-[`State`](https://api.rocket.rs/rocket/struct.State.html) type: a [request
-guard](/guide/requests/#request-guards) for managed state. To use the request
+[`State`](@api/v0.3/rocket/struct.State.html) type: a [request
+guard](../requests/#request-guards) for managed state. To use the request
 guard, add a `State<T>` type to any request handler, where `T` is the type of
 the managed state. For example, we can retrieve and respond with the current
 `HitCount` in a `count` route as follows:
@@ -83,7 +83,7 @@ fn from_request(req: &'a Request<'r>) -> request::Outcome<T, ()> {
 }
 ```
 
-[`Request::guard()`]: https://api.rocket.rs/rocket/struct.Request.html#method.guard
+[`Request::guard()`]: @api/v0.3/rocket/struct.Request.html#method.guard
 
 ### Unmanaged State
 
@@ -142,10 +142,10 @@ globally, add `#![allow(unmanaged_state)]` to your crate attributes.
 
 You can find a complete example using the `HitCount` structure in the [state
 example on
-GitHub](https://github.com/SergioBenitez/Rocket/tree/v0.3.17/examples/state) and
+GitHub](@git/v0.3/examples/state) and
 learn more about the [`manage`
-method](https://api.rocket.rs/rocket/struct.Rocket.html#method.manage) and
-[`State` type](https://api.rocket.rs/rocket/struct.State.html) in the API docs.
+method](@api/v0.3/rocket/struct.Rocket.html#method.manage) and
+[`State` type](@api/v0.3/rocket/struct.State.html) in the API docs.
 
 ## Databases
 
@@ -172,7 +172,7 @@ fn handler(conn: DbConn) { ... }
 
 To get started, we need to depend on the `diesel` and `r2d2` crates. For
 detailed information on how to use Diesel, please see the [Diesel getting
-started guide](http://diesel.rs/guides/getting-started/). For this example, we
+started guide](http://diesel.rs/getting-started/). For this example, we
 use the following dependencies:
 
 ```

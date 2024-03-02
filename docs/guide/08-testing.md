@@ -14,32 +14,32 @@ instance. Usage is straightforward:
 
   1. Construct a `Rocket` instance that represents the application.
 
-    ```rust
-    let rocket = rocket::ignite();
-    ```
+     ```rust
+     let rocket = rocket::ignite();
+     ```
 
   2. Construct a `Client` using the `Rocket` instance.
 
-    ```rust
-    let client = Client::new(rocket).expect("valid rocket instance");
-    ```
+     ```rust
+     let client = Client::new(rocket).expect("valid rocket instance");
+     ```
 
   3. Construct requests using the `Client` instance.
 
-    ```rust
-    let req = client.get("/");
-    ```
+     ```rust
+     let req = client.get("/");
+     ```
 
   4. Dispatch the request to retrieve the response.
 
-    ```rust
-    let response = req.dispatch();
-    ```
+     ```rust
+     let response = req.dispatch();
+     ```
 
-[`local`]: https://api.rocket.rs/rocket/local/index.html
-[`Client`]: https://api.rocket.rs/rocket/local/struct.Client.html
-[`LocalRequest`]: https://api.rocket.rs/rocket/local/struct.LocalRequest.html
-[`Rocket`]: https://api.rocket.rs/rocket/struct.Rocket.html
+[`local`]: @api/v0.3/rocket/local/index.html
+[`Client`]: @api/v0.3/rocket/local/struct.Client.html
+[`LocalRequest`]: @api/v0.3/rocket/local/struct.LocalRequest.html
+[`Rocket`]: @api/v0.3/rocket/struct.Rocket.html
 
 ## Validating Responses
 
@@ -57,13 +57,13 @@ a few below:
   * [`body_string`]: returns the body data as a `String`.
   * [`body_bytes`]: returns the body data as a `Vec<u8>`.
 
-[`LocalResponse`]: https://api.rocket.rs/rocket/local/struct.LocalResponse.html
-[`Response`]: https://api.rocket.rs/rocket/struct.Response.html
-[`status`]: https://api.rocket.rs/rocket/struct.Response.html#method.status
-[`content_type`]: https://api.rocket.rs/rocket/struct.Response.html#method.content_type
-[`headers`]: https://api.rocket.rs/rocket/struct.Response.html#method.headers
-[`body_string`]: https://api.rocket.rs/rocket/struct.Response.html#method.body_string
-[`body_bytes`]: https://api.rocket.rs/rocket/struct.Response.html#method.body_bytes
+[`LocalResponse`]: @api/v0.3/rocket/local/struct.LocalResponse.html
+[`Response`]: @api/v0.3/rocket/struct.Response.html
+[`status`]: @api/v0.3/rocket/struct.Response.html#method.status
+[`content_type`]: @api/v0.3/rocket/struct.Response.html#method.content_type
+[`headers`]: @api/v0.3/rocket/struct.Response.html#method.headers
+[`body_string`]: @api/v0.3/rocket/struct.Response.html#method.body_string
+[`body_bytes`]: @api/v0.3/rocket/struct.Response.html#method.body_bytes
 
 These methods are typically used in combination with the `assert_eq!` or
 `assert!` macros as follows:
@@ -179,7 +179,7 @@ mod test {
 
 The tests can be run with `cargo test`. You can find the full source code to
 [this example on
-GitHub](https://github.com/SergioBenitez/Rocket/tree/v0.3.17/examples/testing).
+GitHub](@git/v0.3/examples/testing).
 
 ## Codegen Debug
 

@@ -101,7 +101,7 @@ string with the specified contents. Rocket will take the string and return it as
 the body of a fully formed HTTP response with `Content-Type: text/plain`. You
 can read more about how Rocket formulates responses at the [API documentation
 for the Responder
-  trait](https://api.rocket.rs/rocket/response/trait.Responder.html).
+  trait](@api/v0.3/rocket/response/trait.Responder.html).
 
 Remember that routes first need to be mounted before Rocket dispatches requests
 to them. To mount the `index` route, modify the main function so that it reads:
@@ -214,7 +214,7 @@ use rocket::Data;
 use rocket::http::RawStr;
 ```
 
-The [Data](https://api.rocket.rs/rocket/data/struct.Data.html) structure is key
+The [Data](@api/v0.3/rocket/data/struct.Data.html) structure is key
 here: it represents an unopened stream to the incoming request body data. We'll
 use it to efficiently stream the incoming request to a file.
 
@@ -290,7 +290,7 @@ Here's a first take at implementing the `retrieve` route. The route below takes
 in an `<id>` as a dynamic path element. The handler uses the `id` to construct a
 path to the paste inside `upload/`, and then attempts to open the file at that
 path, optionally returning the `File` if it exists. Rocket treats a `None`
-[Responder](https://api.rocket.rs/rocket/response/trait.Responder.html#provided-implementations)
+[Responder](@api/v0.3/rocket/response/trait.Responder.html#provided-implementations)
 as a **404** error, which is exactly what we want to return when the requested
 paste doesn't exist.
 
@@ -306,7 +306,7 @@ fn retrieve(id: &RawStr) -> Option<File> {
 ```
 
 Unfortunately, there's a problem with this code. Can you spot the issue? The
-[`RawStr`](https://api.rocket.rs/rocket/http/struct.RawStr.html) type should tip
+[`RawStr`](@api/v0.3/rocket/http/struct.RawStr.html) type should tip
 you off!
 
 The issue is that the _user_ controls the value of `id`, and as a result, can
@@ -321,7 +321,7 @@ provides the tools to prevent this and other kinds of attacks from happening.
 
 To prevent the attack, we need to _validate_ `id` before we use it. Since the
 `id` is a dynamic parameter, we can use Rocket's
-[FromParam](https://api.rocket.rs/rocket/request/trait.FromParam.html) trait to
+[FromParam](@api/v0.3/rocket/request/trait.FromParam.html) trait to
 implement the validation and ensure that the `id` is a valid `PasteID` before
 using it. We do this by implementing `FromParam` for `PasteID` in
 `src/paste_id.rs`, as below:
@@ -399,10 +399,10 @@ through some of them to get a better feel for Rocket. Here are some ideas:
   * Add a new route, `GET /<id>/<lang>` that syntax highlights the paste with ID
     `<id>` for language `<lang>`. If `<lang>` is not a known language, do no
     highlighting. Possibly validate `<lang>` with `FromParam`.
-  * Use the [`local` module](https://api.rocket.rs/rocket/local/) to write
+  * Use the [`local` module](@api/v0.3/rocket/local/) to write
     unit tests for your pastebin.
   * Dispatch a thread before `launch`ing Rocket in `main` that periodically
     cleans up idling old pastes in `upload/`.
 
 You can find the full source code for the [completed pastebin tutorial on
-GitHub](https://github.com/SergioBenitez/Rocket/tree/v0.3.17/examples/pastebin).
+GitHub](@git/v0.3/examples/pastebin).

@@ -71,7 +71,7 @@ fn world() -> &'static str {  // <- request handler
 This declares the `world` route to match against the static path `"/world"` on
 incoming `GET` requests. The `world` route is simple, but additional route
 parameters are necessary when building more interesting applications. The
-[Requests](/guide/requests) section describes the available options for
+[Requests](../requests/) section describes the available options for
 constructing routes.
 
 ## Mounting
@@ -179,7 +179,7 @@ we expected.
 
 A version of this example's complete crate, ready to `cargo run`, can be found
 on
-[GitHub](https://github.com/SergioBenitez/Rocket/tree/v0.3.17/examples/hello_world).
+[GitHub](@git/v0.3/examples/hello_world).
 You can find dozens of other complete examples, spanning all of Rocket's
 features, in the [GitHub examples
-directory](https://github.com/SergioBenitez/Rocket/tree/v0.3.17/examples/).
+directory](@git/v0.3/examples/).
