@@ -143,8 +143,8 @@ incoming JSON data. You should use the `limits` parameter for your application's
 data limits as well. Data limits can be retrieved at runtime via the
 [`Request::limits()`] method.
 
-[`Request::limits()`]: @api/rocket/struct.Request.html#method.limits
-[`Json`]: @api/rocket_contrib/json/struct.Json.html#incoming-data-limits
+[`Request::limits()`]: @api/v0.4/rocket/struct.Request.html#method.limits
+[`Json`]: @api/v0.4/rocket_contrib/json/struct.Json.html#incoming-data-limits
 
 ## Extras
 
@@ -152,7 +152,7 @@ In addition to overriding default configuration parameters, a configuration file
 can also define values for any number of _extra_ configuration parameters. While
 these parameters aren't used by Rocket directly, other libraries, or your own
 application, can use them as they wish. As an example, the
-[Template](@api/rocket_contrib/templates/struct.Template.html) type
+[Template](@api/v0.4/rocket_contrib/templates/struct.Template.html) type
 accepts a value for the `template_dir` configuration parameter. The parameter
 can be set in `Rocket.toml` as follows:
 
@@ -292,8 +292,8 @@ all configuration from `Rocket.toml` or environment variables. In other words,
 using `rocket::custom()` results in `Rocket.toml` and environment variables
 being ignored.
 
-[`rocket::custom()`]: @api/rocket/fn.custom.html
-[`ConfigBuilder`]: @api/rocket/config/struct.ConfigBuilder.html
+[`rocket::custom()`]: @api/v0.4/rocket/fn.custom.html
+[`ConfigBuilder`]: @api/v0.4/rocket/config/struct.ConfigBuilder.html
 
 ## Configuring TLS
 

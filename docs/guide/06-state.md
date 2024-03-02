@@ -30,7 +30,7 @@ The process for using managed state is simple:
 ### Adding State
 
 To instruct Rocket to manage state for your application, call the
-[`manage`](@api/rocket/struct.Rocket.html#method.manage) method
+[`manage`](@api/v0.4/rocket/struct.Rocket.html#method.manage) method
 on an instance of `Rocket`. For example, to ask Rocket to manage a `HitCount`
 structure with an internal `AtomicUsize` with an initial value of `0`, we can
 write the following:
@@ -63,7 +63,7 @@ rocket::ignite()
 ### Retrieving State
 
 State that is being managed by Rocket can be retrieved via the
-[`State`](@api/rocket/struct.State.html) type: a [request
+[`State`](@api/v0.4/rocket/struct.State.html) type: a [request
 guard](../requests/#request-guards) for managed state. To use the request
 guard, add a `State<T>` type to any request handler, where `T` is the type of
 the managed state. For example, we can retrieve and respond with the current
@@ -108,9 +108,9 @@ fn state(hit_count: State<HitCount>, config: State<Config>) { /* .. */ }
   **500** error to the client.
 
 You can find a complete example using the `HitCount` structure in the [state
-example on GitHub](@example/state) and learn more about the [`manage`
-method](@api/rocket/struct.Rocket.html#method.manage) and [`State`
-type](@api/rocket/struct.State.html) in the API docs.
+example on GitHub](@git/v0.4/examples/state) and learn more about the [`manage`
+method](@api/v0.4/rocket/struct.Rocket.html#method.manage) and [`State`
+type](@api/v0.4/rocket/struct.State.html) in the API docs.
 
 ### Within Guards
 
@@ -142,7 +142,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for T {
 }
 ```
 
-[`Request::guard()`]: @api/rocket/struct.Request.html#method.guard
+[`Request::guard()`]: @api/v0.4/rocket/struct.Request.html#method.guard
 
 ## Request-Local State
 
@@ -204,8 +204,8 @@ which uses request-local state to cache expensive authentication and
 authorization computations, and the [`Fairing`] documentation, which uses
 request-local state to implement request timing.
 
-[`FromRequest` request-local state]: @api/rocket/request/trait.FromRequest.html#request-local-state
-[`Fairing`]: @api/rocket/fairing/trait.Fairing.html#request-local-state
+[`FromRequest` request-local state]: @api/v0.4/rocket/request/trait.FromRequest.html#request-local-state
+[`Fairing`]: @api/v0.4/rocket/fairing/trait.Fairing.html#request-local-state
 
 ## Databases
 
@@ -355,4 +355,4 @@ postgres = { version = "0.15", features = ["with-chrono"] }
 For more on Rocket's built-in database support, see the
 [`rocket_contrib::databases`] module documentation.
 
-[`rocket_contrib::databases`]: @api/rocket_contrib/databases/index.html
+[`rocket_contrib::databases`]: @api/v0.4/rocket_contrib/databases/index.html

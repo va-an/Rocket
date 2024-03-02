@@ -49,10 +49,10 @@ instance. Usage is straightforward:
      # let _ = response;
      ```
 
-[`local`]: @api/rocket/local/
-[`Client`]: @api/rocket/local/struct.Client.html
-[`LocalRequest`]: @api/rocket/local/struct.LocalRequest.html
-[`Rocket`]: @api/rocket/struct.Rocket.html
+[`local`]: @api/v0.4/rocket/local/
+[`Client`]: @api/v0.4/rocket/local/struct.Client.html
+[`LocalRequest`]: @api/v0.4/rocket/local/struct.LocalRequest.html
+[`Rocket`]: @api/v0.4/rocket/struct.Rocket.html
 
 ## Validating Responses
 
@@ -70,13 +70,13 @@ a few below:
   * [`body_string`]: returns the body data as a `String`.
   * [`body_bytes`]: returns the body data as a `Vec<u8>`.
 
-[`LocalResponse`]: @api/rocket/local/struct.LocalResponse.html
-[`Response`]: @api/rocket/struct.Response.html
-[`status`]: @api/rocket/struct.Response.html#method.status
-[`content_type`]: @api/rocket/struct.Response.html#method.content_type
-[`headers`]: @api/rocket/struct.Response.html#method.headers
-[`body_string`]: @api/rocket/struct.Response.html#method.body_string
-[`body_bytes`]: @api/rocket/struct.Response.html#method.body_bytes
+[`LocalResponse`]: @api/v0.4/rocket/local/struct.LocalResponse.html
+[`Response`]: @api/v0.4/rocket/struct.Response.html
+[`status`]: @api/v0.4/rocket/struct.Response.html#method.status
+[`content_type`]: @api/v0.4/rocket/struct.Response.html#method.content_type
+[`headers`]: @api/v0.4/rocket/struct.Response.html#method.headers
+[`body_string`]: @api/v0.4/rocket/struct.Response.html#method.body_string
+[`body_bytes`]: @api/v0.4/rocket/struct.Response.html#method.body_bytes
 
 These methods are typically used in combination with the `assert_eq!` or
 `assert!` macros as follows:
@@ -252,7 +252,7 @@ mod test {
 ```
 
 The tests can be run with `cargo test`. You can find the full source code to
-[this example on GitHub](@example/testing).
+[this example on GitHub](@git/v0.4/examples/testing).
 
 ## Codegen Debug
 

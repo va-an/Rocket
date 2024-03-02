@@ -6,7 +6,7 @@ trait can be returned, including your own. In this section, we describe the
 `Responder` trait as well as several useful `Responder`s provided by Rocket.
 We'll also briefly discuss how to implement your own `Responder`.
 
-[`Responder`]: @api/rocket/response/trait.Responder.html
+[`Responder`]: @api/v0.4/rocket/response/trait.Responder.html
 
 ## Responder
 
@@ -17,7 +17,7 @@ decides which to use. For instance, `String` uses a fixed-sized body, while
 `File` uses a streamed response. Responders may dynamically adjust their
 responses according to the incoming `Request` they are responding to.
 
-[`Response`]: @api/rocket/response/struct.Response.html
+[`Response`]: @api/v0.4/rocket/response/struct.Response.html
 
 ### Wrapping
 
@@ -31,7 +31,7 @@ struct WrappingResponder<R>(R);
 
 A wrapping responder modifies the response returned by `R` before responding
 with that same response. For instance, Rocket provides `Responder`s in the
-[`status` module](@api/rocket/response/status/) that override the status code of
+[`status` module](@api/v0.4/rocket/response/status/) that override the status code of
 the wrapped `Responder`. As an example, the [`Accepted`] type sets the status to
 `202 - Accepted`. It can be used as follows:
 
@@ -48,7 +48,7 @@ fn new(id: usize) -> status::Accepted<String> {
 }
 ```
 
-Similarly, the types in the [`content` module](@api/rocket/response/content/)
+Similarly, the types in the [`content` module](@api/v0.4/rocket/response/content/)
 can be used to override the Content-Type of a response. For instance, to set the
 Content-Type of `&'static str` to JSON, you can use the [`content::Json`] type
 as follows:
@@ -67,8 +67,8 @@ fn json() -> content::Json<&'static str> {
 
 ! warning: This is _not_ the same as the [`Json`] in [`rocket_contrib`]!
 
-[`Accepted`]: @api/rocket/response/status/struct.Accepted.html
-[`content::Json`]: @api/rocket/response/content/struct.Json.html
+[`Accepted`]: @api/v0.4/rocket/response/status/struct.Accepted.html
+[`content::Json`]: @api/v0.4/rocket/response/content/struct.Json.html
 
 ### Errors
 
@@ -163,7 +163,7 @@ simply including fields of these types.
 For more on using the `Responder` derive, see the [`Responder` derive]
 documentation.
 
-[`Responder` derive]: @api/rocket/derive.Responder.html
+[`Responder` derive]: @api/v0.4/rocket/derive.Responder.html
 
 ## Implementations
 
@@ -291,14 +291,14 @@ library. Among these are:
   * [`MsgPack`] - Automatically serializes values into MessagePack.
   * [`Template`] - Renders a dynamic template using handlebars or Tera.
 
-[`status`]: @api/rocket/response/status/
-[`response`]: @api/rocket/response/
-[`NamedFile`]: @api/rocket/response/struct.NamedFile.html
-[`Content`]: @api/rocket/response/struct.Content.html
-[`Redirect`]: @api/rocket/response/struct.Redirect.html
-[`Stream`]: @api/rocket/response/struct.Stream.html
-[`Flash`]: @api/rocket/response/struct.Flash.html
-[`MsgPack`]: @api/rocket_contrib/msgpack/struct.MsgPack.html
+[`status`]: @api/v0.4/rocket/response/status/
+[`response`]: @api/v0.4/rocket/response/
+[`NamedFile`]: @api/v0.4/rocket/response/struct.NamedFile.html
+[`Content`]: @api/v0.4/rocket/response/struct.Content.html
+[`Redirect`]: @api/v0.4/rocket/response/struct.Redirect.html
+[`Stream`]: @api/v0.4/rocket/response/struct.Stream.html
+[`Flash`]: @api/v0.4/rocket/response/struct.Flash.html
+[`MsgPack`]: @api/v0.4/rocket_contrib/msgpack/struct.MsgPack.html
 
 ### Streaming
 
@@ -325,7 +325,7 @@ fn stream() -> Result<Stream<UnixStream>, std::io::Error> {
 # }
 ```
 
-[`rocket_contrib`]: @api/rocket_contrib/
+[`rocket_contrib`]: @api/v0.4/rocket_contrib/
 
 ### JSON
 
@@ -362,10 +362,10 @@ fails, a **500 - Internal Server Error** is returned.
 
 The [JSON example on GitHub] provides further illustration.
 
-[`Json`]: @api/rocket_contrib/json/struct.Json.html
+[`Json`]: @api/v0.4/rocket_contrib/json/struct.Json.html
 [`Serialize`]: https://docs.serde.rs/serde/trait.Serialize.html
 [`serde`]: https://docs.serde.rs/serde/
-[JSON example on GitHub]: @example/json
+[JSON example on GitHub]: @git/v0.4/examples/json
 
 ## Templates
 
@@ -397,7 +397,7 @@ structs, `HashMaps`, and others.
 
 For a template to be renderable, it must first be registered. The `Template`
 fairing automatically registers all discoverable templates when attached. The
-[Fairings](../fairings) sections of the guide provides more information on
+[Fairings](../fairings/) sections of the guide provides more information on
 fairings. To attach the template fairing, simply call
 `.attach(Template::fairing())` on an instance of `Rocket` as follows:
 
@@ -436,11 +436,11 @@ reloading is disabled.
 
 The [`Template`] API documentation contains more information about templates,
 including how to customize a template engine to add custom helpers and filters.
-The [Handlebars templates example](@example/handlebars_templates) is a
+The [Handlebars templates example](@git/v0.4/examples/handlebars_templates) is a
 fully composed application that makes use of Handlebars templates, while the
-[Tera templates example](@example/tera_templates) does the same for Tera.
+[Tera templates example](@git/v0.4/examples/tera_templates) does the same for Tera.
 
-[`Template`]: @api/rocket_contrib/templates/struct.Template.html
+[`Template`]: @api/v0.4/rocket_contrib/templates/struct.Template.html
 [configurable]: ../configuration/#extras
 
 ## Typed URIs
@@ -654,15 +654,15 @@ uri!(person: id = 100, details = UserDetails { age: Some(20), nickname: "Bob".in
 
 See the [`FromUriParam`] documentation for further details.
 
-[`Origin`]: @api/rocket/http/uri/struct.Origin.html
-[`UriPart`]: @api/rocket/http/uri/trait.UriPart.html
-[`Uri`]: @api/rocket/http/uri/enum.Uri.html
-[`Redirect::to()`]: @api/rocket/response/struct.Redirect.html#method.to
-[`uri!`]: @api/rocket/macro.uri.html
-[`UriDisplay`]: @api/rocket/http/uri/trait.UriDisplay.html
-[`FromUriParam`]: @api/rocket/http/uri/trait.FromUriParam.html
-[`Path`]: @api/rocket/http/uri/enum.Path.html
-[`Query`]: @api/rocket/http/uri/enum.Query.html
-[`Ignorable`]: @api/rocket/http/uri/trait.Ignorable.html
-[`UriDisplayPath`]: @api/rocket/derive.UriDisplayPath.html
-[`UriDisplayQuery`]: @api/rocket/derive.UriDisplayQuery.html
+[`Origin`]: @api/v0.4/rocket/http/uri/struct.Origin.html
+[`UriPart`]: @api/v0.4/rocket/http/uri/trait.UriPart.html
+[`Uri`]: @api/v0.4/rocket/http/uri/enum.Uri.html
+[`Redirect::to()`]: @api/v0.4/rocket/response/struct.Redirect.html#method.to
+[`uri!`]: @api/v0.4/rocket/macro.uri.html
+[`UriDisplay`]: @api/v0.4/rocket/http/uri/trait.UriDisplay.html
+[`FromUriParam`]: @api/v0.4/rocket/http/uri/trait.FromUriParam.html
+[`Path`]: @api/v0.4/rocket/http/uri/enum.Path.html
+[`Query`]: @api/v0.4/rocket/http/uri/enum.Query.html
+[`Ignorable`]: @api/v0.4/rocket/http/uri/trait.Ignorable.html
+[`UriDisplayPath`]: @api/v0.4/rocket/derive.UriDisplayPath.html
+[`UriDisplayQuery`]: @api/v0.4/rocket/derive.UriDisplayQuery.html

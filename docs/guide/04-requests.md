@@ -30,7 +30,7 @@ validations. Rocket's code generation takes care of actually validating the
 properties. This section describes how to ask Rocket to validate against all of
 these properties and more.
 
-[`route`]: @api/rocket/attr.route.html
+[`route`]: @api/v0.4/rocket/attr.route.html
 
 ## Methods
 
@@ -66,7 +66,7 @@ request contains a body of `Content-Type: application/x-www-form-urlencoded` and
 the form's **first** field has the name `_method` and a valid HTTP method name
 as its value (such as `"PUT"`), that field's value is used as the method for the
 incoming request.  This allows Rocket applications to submit non-`POST` forms.
-The [todo example](@example/todo/static/index.html.tera#L47) makes use of this
+The [todo example](@git/v0.4/examples/todo/static/index.html.tera#L47) makes use of this
 feature to submit `PUT` and `DELETE` requests from a web form.
 
 ## Dynamic Paths
@@ -115,8 +115,8 @@ fn hello(name: String, age: u8, cool: bool) -> String {
 }
 ```
 
-[`FromParam`]: @api/rocket/request/trait.FromParam.html
-[`FromParam` API docs]: @api/rocket/request/trait.FromParam.html
+[`FromParam`]: @api/v0.4/rocket/request/trait.FromParam.html
+[`FromParam` API docs]: @api/v0.4/rocket/request/trait.FromParam.html
 
 ! note: Rocket types _raw_ strings separately from decoded strings.
 
@@ -135,7 +135,7 @@ fn hello(name: String, age: u8, cool: bool) -> String {
   potentially unsafe access to the string (`&RawStr`), or safe access to the
   string at the cost of an allocation (`String`).
 
-  [`RawStr`]: @api/rocket/http/struct.RawStr.html
+  [`RawStr`]: @api/v0.4/rocket/http/struct.RawStr.html
 
 ### Multiple Segments
 
@@ -185,9 +185,9 @@ fn files(file: PathBuf) -> Option<NamedFile> {
 
   `rocket.mount("/public", StaticFiles::from("/static"))`
 
-[`rocket_contrib`]: @api/rocket_contrib/
-[`StaticFiles`]: @api/rocket_contrib/serve/struct.StaticFiles.html
-[`FromSegments`]: @api/rocket/request/trait.FromSegments.html
+[`rocket_contrib`]: @api/v0.4/rocket_contrib/
+[`StaticFiles`]: @api/v0.4/rocket_contrib/serve/struct.StaticFiles.html
+[`FromSegments`]: @api/v0.4/rocket/request/trait.FromSegments.html
 
 ## Forwarding
 
@@ -325,7 +325,7 @@ Any number of dynamic query segments are allowed. A query segment can be of any
 type, including your own, as long as the type implements the [`FromFormValue`]
 trait.
 
-[`FromFormValue`]: @api/rocket/request/trait.FromFormValue.html
+[`FromFormValue`]: @api/v0.4/rocket/request/trait.FromFormValue.html
 
 ### Optional Parameters
 
@@ -362,7 +362,7 @@ value `false` if it is missing. The default value for a missing parameter can be
 customized for your own types that implement `FromFormValue` by implementing
 [`FromFormValue::default()`].
 
-[`FromFormValue::default()`]: @api/rocket/request/trait.FromFormValue.html#method.default
+[`FromFormValue::default()`]: @api/v0.4/rocket/request/trait.FromFormValue.html#method.default
 
 ### Multiple Segments
 
@@ -412,9 +412,9 @@ fn item(id: usize, user: Option<Form<User>>) { /* ... */ }
 ```
 
 For more query handling examples, see [the `query_params`
-example](@example/query_params).
+example](@git/v0.4/examples/query_params).
 
-[`FromQuery`]: @api/rocket/request/trait.FromQuery.html
+[`FromQuery`]: @api/v0.4/rocket/request/trait.FromQuery.html
 
 ## Request Guards
 
@@ -454,8 +454,8 @@ short-circuiting; if one guard fails, the remaining are not attempted. To learn
 more about request guards and implementing them, see the [`FromRequest`]
 documentation.
 
-[`FromRequest`]: @api/rocket/request/trait.FromRequest.html
-[`Cookies`]: @api/rocket/http/enum.Cookies.html
+[`FromRequest`]: @api/v0.4/rocket/request/trait.FromRequest.html
+[`Cookies`]: @api/v0.4/rocket/http/enum.Cookies.html
 
 ### Custom Guards
 
@@ -610,7 +610,7 @@ be set and removed using the `Cookies` guard. The [cookies example] on GitHub
 illustrates further use of the `Cookies` type to get and set cookies, while the
 [`Cookies`] documentation contains complete usage information.
 
-[cookies example]: @example/cookies
+[cookies example]: @git/v0.4/examples/cookies
 
 ### Private Cookies
 
@@ -651,7 +651,7 @@ fn logout(mut cookies: Cookies) -> Flash<Redirect> {
 }
 ```
 
-[`Cookies::add()`]: @api/rocket/http/enum.Cookies.html#method.add
+[`Cookies::add()`]: @api/v0.4/rocket/http/enum.Cookies.html#method.add
 
 Support for private cookies, which depends on the [`ring`] library, can be
 omitted at build time by disabling Rocket's default features, in-turn disabling
@@ -680,12 +680,12 @@ Generating a string suitable for use as a `secret_key` configuration value is
 usually done through tools like `openssl`. Using `openssl`, a 256-bit base64 key
 can be generated with the command `openssl rand -base64 32`.
 
-For more information on configuration, see the [Configuration](../configuration)
+For more information on configuration, see the [Configuration](../configuration/)
 section of the guide.
 
-[`get_private`]: @api/rocket/http/enum.Cookies.html#method.get_private
-[`add_private`]: @api/rocket/http/enum.Cookies.html#method.add_private
-[`remove_private`]: @api/rocket/http/enum.Cookies.html#method.remove_private
+[`get_private`]: @api/v0.4/rocket/http/enum.Cookies.html#method.get_private
+[`add_private`]: @api/v0.4/rocket/http/enum.Cookies.html#method.add_private
+[`remove_private`]: @api/v0.4/rocket/http/enum.Cookies.html#method.remove_private
 
 ### One-At-A-Time
 
@@ -819,7 +819,7 @@ header will match `user`. If instead the route had been declared as `post`,
 Rocket would match the `format` against the `Content-Type` header of the
 incoming response.
 
-[`ContentType::parse_flexible()`]: @api/rocket/http/struct.ContentType.html#method.parse_flexible
+[`ContentType::parse_flexible()`]: @api/v0.4/rocket/http/struct.ContentType.html#method.parse_flexible
 
 ## Body Data
 
@@ -840,7 +840,7 @@ fn new(input: T) { /* .. */ }
 
 Any type that implements [`FromData`] is also known as _a data guard_.
 
-[`FromData`]: @api/rocket/data/trait.FromData.html
+[`FromData`]: @api/v0.4/rocket/data/trait.FromData.html
 
 ### Forms
 
@@ -890,9 +890,9 @@ and `Result` types:
 fn new(task: Option<Form<Task>>) { /* .. */ }
 ```
 
-[`Form`]: @api/rocket/request/struct.Form.html
-[`FromForm`]: @api/rocket/request/trait.FromForm.html
-[`FromFormValue`]: @api/rocket/request/trait.FromFormValue.html
+[`Form`]: @api/v0.4/rocket/request/struct.Form.html
+[`FromForm`]: @api/v0.4/rocket/request/trait.FromForm.html
+[`FromFormValue`]: @api/v0.4/rocket/request/trait.FromFormValue.html
 
 #### Lenient Parsing
 
@@ -932,7 +932,7 @@ struct Task {
 fn new(task: LenientForm<Task>) { /* .. */ }
 ```
 
-[`LenientForm`]: @api/rocket/request/struct.LenientForm.html
+[`LenientForm`]: @api/v0.4/rocket/request/struct.LenientForm.html
 
 #### Field Renaming
 
@@ -1034,13 +1034,13 @@ decorated enum. The implementation returns successfully when the form value
 matches, case insensitively, the stringified version of a variant's name,
 returning an instance of said variant.
 
-The [form validation](@example/form_validation) and [form kitchen
-sink](@example/form_kitchen_sink) examples provide further illustrations.
+The [form validation](@git/v0.4/examples/form_validation) and [form kitchen
+sink](@git/v0.4/examples/form_kitchen_sink) examples provide further illustrations.
 
 ### JSON
 
 Handling JSON data is no harder: simply use the
-[`Json`](@api/rocket_contrib/json/struct.Json.html) type from
+[`Json`](@api/v0.4/rocket_contrib/json/struct.Json.html) type from
 [`rocket_contrib`]:
 
 ```rust
@@ -1067,13 +1067,13 @@ The only condition is that the generic type in `Json` implements the
 `Deserialize` trait from [Serde](https://github.com/serde-rs/json). See the
 [JSON example] on GitHub for a complete example.
 
-[JSON example]: @example/json
+[JSON example]: @git/v0.4/examples/json
 
 ### Streaming
 
 Sometimes you just want to handle incoming data directly. For example, you might
 want to stream the incoming data out to a file. Rocket makes this as simple as
-possible via the [`Data`](@api/rocket/data/struct.Data.html)
+possible via the [`Data`](@api/v0.4/rocket/data/struct.Data.html)
 type:
 
 ```rust
@@ -1094,7 +1094,7 @@ The route above accepts any `POST` request to the `/upload` path with
 `tmp/upload.txt`, and the number of bytes written is returned as a plain text
 response if the upload succeeds. If the upload fails, an error response is
 returned. The handler above is complete. It really is that simple! See the
-[GitHub example code](@example/raw_upload) for the full crate.
+[GitHub example code](@git/v0.4/examples/raw_upload) for the full crate.
 
 ! warning: You should _always_ set limits when reading incoming data.
 
@@ -1175,10 +1175,10 @@ fn main() {
 
 Unlike route request handlers, catchers take exactly zero or one parameter. If
 the catcher takes a parameter, it must be of type [`&Request`]. The [error
-catcher example](@example/errors) on GitHub illustrates their use in full.
+catcher example](@git/v0.4/examples/errors) on GitHub illustrates their use in full.
 
-[`catch`]: @api/rocket/attr.catch.html
-[`register()`]: @api/rocket/struct.Rocket.html#method.register
-[`mount()`]: @api/rocket/struct.Rocket.html#method.mount
-[`catchers!`]: @api/rocket/macro.catchers.html
-[`&Request`]: @api/rocket/struct.Request.html
+[`catch`]: @api/v0.4/rocket/attr.catch.html
+[`register()`]: @api/v0.4/rocket/struct.Rocket.html#method.register
+[`mount()`]: @api/v0.4/rocket/struct.Rocket.html#method.mount
+[`catchers!`]: @api/v0.4/rocket/macro.catchers.html
+[`&Request`]: @api/v0.4/rocket/struct.Request.html
