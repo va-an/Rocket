@@ -606,3 +606,39 @@ fn test_json() {
         uri!(bar(&mut Json(inner))) => "/?json=%7B%22foo%22:%7B%22foo%22:%22hi%22%7D%7D",
     }
 }
+
+#[test]
+fn test_vec_in_query() {
+    #[post("/?<v>")]
+    fn f(v: Vec<usize>) { }
+
+    #[post("/?<v>")]
+    fn g(v: Vec<String>) { }
+
+    #[post("/?<v>")]
+    fn h(v: &[u8]) { }
+
+    let bytes = vec![0u8, 1, 2];
+    assert_uri_eq! {
+        uri!(f(v = vec![1, 2, 3])) => "/?v=1&v=2&v=3",
+        uri!(f(v = &vec![1, 2, 3])) => "/?v=1&v=2&v=3",
+        uri!(f(v = &[1, 2, 3])) => "/?v=1&v=2&v=3",
+        uri!(f(v = [1, 2, 3])) => "/?v=1&v=2&v=3",
+
+        uri!(f(vec![1, 2, 3])) => "/?v=1&v=2&v=3",
+        uri!(f(&vec![1, 2, 3])) => "/?v=1&v=2&v=3",
+        uri!(f(&[1, 2, 3])) => "/?v=1&v=2&v=3",
+        uri!(f([1, 2, 3])) => "/?v=1&v=2&v=3",
+
+        // TODO: Introduce `RawBytes` + FromUriParam + UriDisplay impls.
+        // uri!(f(v = &[1, 2, 3][..])) => "/?v=1&v=2&v=3",
+
+        uri!(g(v = vec!["a", "b=c", "d"])) => "/?v=a&v=b%3Dc&v=d",
+        uri!(g(v = &vec!["a", "b=c", "d"])) => "/?v=a&v=b%3Dc&v=d",
+        uri!(g(v = ["a", "b=c", "d"])) => "/?v=a&v=b%3Dc&v=d",
+        uri!(g(v = &["a", "b=c", "d"])) => "/?v=a&v=b%3Dc&v=d",
+
+        uri!(h(v = bytes.as_slice())) => "/?v=%00%01%02",
+        uri!(h(v = &[1, 2, 3][..])) => "/?v=%01%02%03",
+    }
+}
