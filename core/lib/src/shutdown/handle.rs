@@ -2,7 +2,8 @@ use std::future::Future;
 use std::task::{Context, Poll};
 use std::pin::Pin;
 
-use futures::{FutureExt, StreamExt};
+use futures::{stream, FutureExt, StreamExt};
+use futures::future::{select, Either};
 
 use crate::shutdown::{ShutdownConfig, TripWire};
 use crate::request::{FromRequest, Outcome, Request};
@@ -154,9 +155,6 @@ impl Stages {
     }
 
     pub(crate) fn spawn_listener(&self, config: &ShutdownConfig) {
-        use futures::stream;
-        use futures::future::{select, Either};
-
         let mut signal = match config.signal_stream() {
             Some(stream) => Either::Left(stream.chain(stream::pending())),
             None => Either::Right(stream::pending()),

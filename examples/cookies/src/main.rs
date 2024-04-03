@@ -17,6 +17,7 @@ fn index() -> RawHtml<&'static str> {
 fn rocket() -> _ {
     rocket::build()
         .attach(Template::fairing())
+        .attach(rocket_csrf::Tokenizer::fairing())
         .mount("/", routes![index])
         .mount("/message", message::routes())
         .mount("/session", session::routes())

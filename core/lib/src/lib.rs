@@ -116,10 +116,14 @@ extern crate self as rocket;
 pub use yansi;
 #[doc(hidden)]
 pub use async_stream;
-pub use futures;
 pub use tokio;
 pub use figment;
 pub use time;
+
+pub mod futures {
+    pub use futures::*;
+    pub use crate::util::Race;
+}
 
 #[doc(hidden)]
 #[macro_use]

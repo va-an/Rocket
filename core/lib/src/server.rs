@@ -15,7 +15,7 @@ use crate::erased::{ErasedRequest, ErasedResponse, ErasedIoHandler};
 use crate::listener::{Listener, Connection, BouncedExt, CancellableExt};
 use crate::error::log_server_error;
 use crate::data::{IoStream, RawStream};
-use crate::util::{spawn_inspect, FutureExt, ReaderStream};
+use crate::util::{spawn_inspect, Race, ReaderStream};
 use crate::http::Status;
 
 type Result<T, E = crate::Error> = std::result::Result<T, E>;

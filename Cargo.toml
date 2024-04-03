@@ -10,5 +10,6 @@ members = [
   "contrib/sync_db_pools/lib/",
   "contrib/dyn_templates/",
   "contrib/ws/",
+  "contrib/csrf/",
   "docs/tests",
 ]

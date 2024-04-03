@@ -9,6 +9,12 @@ pub use chain::Chain;
 pub use reader_stream::ReaderStream;
 pub use join::join;
 
+use std::io;
+use std::pin::pin;
+use std::future::Future;
+use either::Either;
+use futures::future;
+
 #[track_caller]
 pub fn spawn_inspect<E, F, Fut>(or: F, future: Fut)
     where F: FnOnce(&E) + Send + Sync + 'static,
@@ -19,13 +25,7 @@ pub fn spawn_inspect<E, F, Fut>(or: F, future: Fut)
     tokio::spawn(future.inspect_err(or));
 }
 
-use std::io;
-use std::pin::pin;
-use std::future::Future;
-use either::Either;
-use futures::future;
-
-pub trait FutureExt: Future + Sized {
+pub trait Race: Future + Sized {
     /// Await `self` or `other`, whichever finishes first.
     async fn race<B: Future>(self, other: B) -> Either<Self::Output, B::Output> {
         match future::select(pin!(self), pin!(other)).await {
@@ -44,7 +44,7 @@ pub trait FutureExt: Future + Sized {
     }
 }
 
-impl<F: Future + Sized> FutureExt for F { }
+impl<F: Future + Sized> Race for F { }
 
 #[doc(hidden)]
 #[macro_export]
