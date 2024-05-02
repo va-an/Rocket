@@ -107,6 +107,9 @@
 //! [testing guide]: https://rocket.rs/v0.5/guide/testing/#testing
 //! [Figment]: https://docs.rs/figment
 
+// Allows using Rocket's codegen in Rocket itself.
+extern crate self as rocket;
+
 /// These are public dependencies! Update docs if these are changed, especially
 /// figment's version number in docs.
 #[doc(hidden)] pub use yansi;
@@ -171,7 +174,7 @@ mod server;
 mod ext;
 mod state;
 mod cookies;
-mod rocket;
+mod rkt;
 mod router;
 mod phase;
 
@@ -185,7 +188,7 @@ mod phase;
 #[doc(inline)] pub use error::Error;
 #[doc(inline)] pub use sentinel::Sentinel;
 #[doc(inline)] pub use crate::request::Request;
-#[doc(inline)] pub use crate::rocket::Rocket;
+#[doc(inline)] pub use crate::rkt::Rocket;
 #[doc(inline)] pub use crate::shutdown::Shutdown;
 #[doc(inline)] pub use crate::state::State;
 #[doc(inline)] pub use rocket_codegen::*;
