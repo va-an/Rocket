@@ -123,7 +123,7 @@ pub use time;
 
 #[doc(hidden)]
 #[macro_use]
-pub mod log;
+pub mod trace;
 #[macro_use]
 pub mod outcome;
 #[macro_use]

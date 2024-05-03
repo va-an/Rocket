@@ -4,8 +4,9 @@ use figment::value::{Map, Dict, magic::RelativePathBuf};
 use serde::{Deserialize, Serialize};
 use yansi::{Paint, Style, Color::Primary};
 
-use crate::log::PaintExt;
-use crate::config::{LogLevel, ShutdownConfig, Ident, CliColors};
+// use crate::log::PaintExt;
+// use crate::config::{LogLevel, ShutdownConfig, Ident, CliColors};
+use crate::config::{ShutdownConfig, Ident, CliColors};
 use crate::request::{self, Request, FromRequest};
 use crate::http::uncased::Uncased;
 use crate::data::Limits;
@@ -122,8 +123,8 @@ pub struct Config {
     pub secret_key: SecretKey,
     /// Graceful shutdown configuration. **(default: [`ShutdownConfig::default()`])**
     pub shutdown: ShutdownConfig,
-    /// Max level to log. **(default: _debug_ `normal` / _release_ `critical`)**
-    pub log_level: LogLevel,
+    // /// Max level to log. **(default: _debug_ `normal` / _release_ `critical`)**
+    // pub log_level: LogLevel,
     /// Whether to use colors and emoji when logging. **(default:
     /// [`CliColors::Auto`])**
     pub cli_colors: CliColors,
@@ -201,7 +202,7 @@ impl Config {
             #[cfg(feature = "secrets")]
             secret_key: SecretKey::zero(),
             shutdown: ShutdownConfig::default(),
-            log_level: LogLevel::Normal,
+            // log_level: LogLevel::Normal,
             cli_colors: CliColors::Auto,
             __non_exhaustive: (),
         }
@@ -225,7 +226,7 @@ impl Config {
     pub fn release_default() -> Config {
         Config {
             profile: Self::RELEASE_PROFILE,
-            log_level: LogLevel::Critical,
+            // log_level: LogLevel::Critical,
             ..Config::debug_default()
         }
     }
@@ -327,9 +328,9 @@ impl Config {
 
     #[inline]
     pub(crate) fn trace_print(&self, figment: &Figment) {
-        if self.log_level != LogLevel::Debug {
-            return;
-        }
+        // if self.log_level != LogLevel::Debug {
+        //     return;
+        // }
 
         trace!("-- configuration trace information --");
         for param in Self::PARAMETERS {
@@ -536,7 +537,7 @@ pub fn bail_with_config_error<T>(error: figment::Error) -> T {
 pub fn pretty_print_error(error: figment::Error) {
     use figment::error::{Kind, OneOf};
 
-    crate::log::init_default();
+    // crate::log::init_default();
     error!("Failed to extract valid configuration.");
     for e in error {
         fn w<T>(v: T) -> yansi::Painted<T> { Paint::new(v).primary() }
