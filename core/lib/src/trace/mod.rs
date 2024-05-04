@@ -2,6 +2,7 @@ use rocket::Config;
 
 #[cfg(feature = "trace")]
 pub mod subscriber;
+pub mod level;
 
 pub trait PaintExt: Sized {
     fn emoji(self) -> yansi::Painted<Self>;
@@ -16,27 +17,34 @@ impl PaintExt for &str {
 }
 
 macro_rules! declare_macro {
-    ($($name:ident),*) => (
-        $(declare_macro!([$] $name);)*
+    ($($name:ident $level:ident),* $(,)?) => (
+        $(declare_macro!([$] $name $level);)*
     );
 
-    ([$d:tt] $name:ident) => (
+    ([$d:tt] $name:ident $level:ident) => (
         #[macro_export]
         macro_rules! $name {
             ($d ($t:tt)*) => ({
                 #[allow(unused_imports)]
                 use $crate::trace::PaintExt as _;
 
-                $crate::tracing::event!($crate::tracing::Level::INFO, $d ($t)*);
+                $crate::tracing::event!($crate::tracing::Level::$level, $d ($t)*);
             })
         }
     );
 }
 
-declare_macro!(log, log_, launch_info, launch_info_, launch_meta, launch_meta_,
-    error, error_, info, info_, trace, trace_, debug, debug_, warn, warn_);
+declare_macro!(
+    launch_info INFO, launch_info_ INFO,
+    launch_meta INFO, launch_meta_ INFO,
+    error ERROR, error_ ERROR,
+    info INFO, info_ INFO,
+    trace TRACE, trace_ TRACE,
+    debug DEBUG, debug_ DEBUG,
+    warn WARN, warn_ WARN,
+);
 
-pub fn init(_config: &Config) {
+pub fn init<'a, T: Into<Option<&'a Config>>>(_config: T) {
     #[cfg(feature = "trace")]
-    subscriber::init(_config);
+    subscriber::init(_config.into());
 }

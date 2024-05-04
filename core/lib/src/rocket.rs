@@ -187,7 +187,7 @@ impl Rocket<Build> {
     pub fn custom<T: Provider>(provider: T) -> Self {
         // We initialize the logger here so that logging from fairings and so on
         // are visible; we use the final config to set a max log-level in ignite
-        crate::trace::init(&Config::debug_default());
+        crate::trace::init(None);
 
         let rocket: Rocket<Build> = Rocket(Building {
             figment: Figment::from(provider),
@@ -534,6 +534,7 @@ impl Rocket<Build> {
     ///     Ok(())
     /// }
     /// ```
+    #[tracing::instrument(target = "rocket", skip_all)]
     pub async fn ignite(mut self) -> Result<Rocket<Ignite>, Error> {
         self = Fairings::handle_ignite(self).await;
         self.fairings.audit().map_err(|f| ErrorKind::FailedFairings(f.to_vec()))?;

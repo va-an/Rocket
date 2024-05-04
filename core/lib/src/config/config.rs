@@ -3,6 +3,7 @@ use figment::providers::{Serialized, Env, Toml, Format};
 use figment::value::{Map, Dict, magic::RelativePathBuf};
 use serde::{Deserialize, Serialize};
 use yansi::{Paint, Style, Color::Primary};
+use tracing::{level_filters::LevelFilter, Level};
 
 // use crate::log::PaintExt;
 // use crate::config::{LogLevel, ShutdownConfig, Ident, CliColors};
@@ -123,8 +124,9 @@ pub struct Config {
     pub secret_key: SecretKey,
     /// Graceful shutdown configuration. **(default: [`ShutdownConfig::default()`])**
     pub shutdown: ShutdownConfig,
-    // /// Max level to log. **(default: _debug_ `normal` / _release_ `critical`)**
-    // pub log_level: LogLevel,
+    /// Max level to log. **(default: _debug_ `info` / _release_ `error`)**
+    #[serde(with = "crate::trace::level")]
+    pub log_level: Option<Level>,
     /// Whether to use colors and emoji when logging. **(default:
     /// [`CliColors::Auto`])**
     pub cli_colors: CliColors,
@@ -202,7 +204,7 @@ impl Config {
             #[cfg(feature = "secrets")]
             secret_key: SecretKey::zero(),
             shutdown: ShutdownConfig::default(),
-            // log_level: LogLevel::Normal,
+            log_level: Some(Level::INFO),
             cli_colors: CliColors::Auto,
             __non_exhaustive: (),
         }
@@ -226,7 +228,7 @@ impl Config {
     pub fn release_default() -> Config {
         Config {
             profile: Self::RELEASE_PROFILE,
-            // log_level: LogLevel::Critical,
+            log_level: Some(Level::ERROR),
             ..Config::debug_default()
         }
     }
@@ -374,7 +376,7 @@ impl Config {
         }
 
         launch_meta_!("shutdown: {}", self.shutdown.paint(VAL));
-        // launch_meta_!("log level: {}", self.log_level.paint(VAL));
+        launch_meta_!("log level: {}", LevelFilter::from(self.log_level).paint(VAL));
         launch_meta_!("cli colors: {}", self.cli_colors.paint(VAL));
 
         // Check for now deprecated config values.

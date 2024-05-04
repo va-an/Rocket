@@ -7,6 +7,7 @@ use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::{reload, filter, Layer, Registry};
 use yansi::{Condition, Paint, Painted};
 
+use crate::config::CliColors;
 use crate::Config;
 
 pub trait PaintExt: Sized {
@@ -21,34 +22,38 @@ impl PaintExt for &str {
     }
 }
 
-pub fn filter_layer(level: Level) -> filter::Targets {
+pub fn filter_layer(level: impl Into<LevelFilter>) -> filter::Targets {
     filter::Targets::new()
-        .with_default(level)
+        .with_default(level.into())
         .with_target("rustls", LevelFilter::OFF)
         .with_target("hyper", LevelFilter::OFF)
 }
 
 pub fn fmt_layer<S: Subscriber + for<'span> LookupSpan<'span>>() -> impl Layer<S> {
-    let layer = tracing_subscriber::fmt::layer();
+    tracing_subscriber::fmt::layer().with_test_writer()
 
-    #[cfg(not(test))] { layer }
-    #[cfg(test)] { layer.with_test_writer() }
+    // #[cfg(not(test))] { layer }
+    // #[cfg(test)] { layer.with_test_writer() }
 }
 
-pub(crate) fn init(config: &Config) {
+pub(crate) fn init(config: Option<&Config>) {
     static HANDLE: OnceLock<reload::Handle<filter::Targets, Registry>> = OnceLock::new();
 
-    // FIXME: Read the true level from `config`.
-    let level = Level::INFO;
+    // Do nothing if there's no config and we've already initialized.
+    if config.is_none() && HANDLE.get().is_some() {
+        return;
+    }
 
     // Always disable colors if requested or if the stdout/err aren't TTYs.
-    let should_color = match config.cli_colors {
-        crate::config::CliColors::Always => Condition::ALWAYS,
-        crate::config::CliColors::Auto => Condition::DEFAULT,
-        crate::config::CliColors::Never => Condition::NEVER,
+    let cli_colors = config.map(|c| c.cli_colors).unwrap_or(CliColors::Auto);
+    let should_color = match cli_colors {
+        CliColors::Always => Condition::ALWAYS,
+        CliColors::Auto => Condition::DEFAULT,
+        CliColors::Never => Condition::NEVER,
     };
 
-    let (filter, reload_handle) = reload::Layer::new(filter_layer(level));
+    let log_level = config.map(|c| c.log_level).unwrap_or(Some(Level::INFO));
+    let (filter, reload_handle) = reload::Layer::new(filter_layer(log_level));
     let result = tracing_subscriber::registry()
         .with(filter)
         .with(fmt_layer())
@@ -57,8 +62,8 @@ pub(crate) fn init(config: &Config) {
     if result.is_ok() {
         assert!(HANDLE.set(reload_handle).is_ok());
         yansi::whenever(should_color);
-    } else if let Some(handle) = HANDLE.get() {
-        assert!(handle.modify(|filter| *filter = filter_layer(level)).is_ok());
+    } if let Some(handle) = HANDLE.get() {
+        assert!(handle.modify(|filter| *filter = filter_layer(log_level)).is_ok());
         yansi::whenever(should_color);
     } else {
         yansi::disable()
