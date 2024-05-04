@@ -120,6 +120,7 @@ pub use futures;
 pub use tokio;
 pub use figment;
 pub use time;
+pub use tracing;
 
 #[doc(hidden)]
 #[macro_use]

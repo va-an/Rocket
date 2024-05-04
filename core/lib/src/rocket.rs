@@ -187,7 +187,7 @@ impl Rocket<Build> {
     pub fn custom<T: Provider>(provider: T) -> Self {
         // We initialize the logger here so that logging from fairings and so on
         // are visible; we use the final config to set a max log-level in ignite
-        // crate::log::init_default();
+        crate::trace::init(&Config::debug_default());
 
         let rocket: Rocket<Build> = Rocket(Building {
             figment: Figment::from(provider),
@@ -538,10 +538,10 @@ impl Rocket<Build> {
         self = Fairings::handle_ignite(self).await;
         self.fairings.audit().map_err(|f| ErrorKind::FailedFairings(f.to_vec()))?;
 
-        // Extract the configuration; initialize the logger.
+        // Extract the configuration; initialize default trace subscriber.
         #[allow(unused_mut)]
         let mut config = Config::try_from(&self.figment).map_err(ErrorKind::Config)?;
-        // crate::log::init(&config);
+        crate::trace::init(&config);
 
         // Check for safely configured secrets.
         #[cfg(feature = "secrets")]

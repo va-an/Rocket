@@ -374,7 +374,7 @@ impl Config {
         }
 
         launch_meta_!("shutdown: {}", self.shutdown.paint(VAL));
-        launch_meta_!("log level: {}", self.log_level.paint(VAL));
+        // launch_meta_!("log level: {}", self.log_level.paint(VAL));
         launch_meta_!("cli colors: {}", self.cli_colors.paint(VAL));
 
         // Check for now deprecated config values.

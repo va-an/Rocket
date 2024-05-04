@@ -23,7 +23,7 @@ all-features = true
 workspace = true
 
 [features]
-default = ["http2", "tokio-macros"]
+default = ["http2", "tokio-macros", "trace"]
 http2 = ["hyper/http2", "hyper-util/http2"]
 http3-preview = ["s2n-quic", "s2n-quic-h3", "tls"]
 secrets = ["cookie/private", "cookie/key-expansion"]
@@ -33,6 +33,7 @@ uuid = ["uuid_", "rocket_http/uuid"]
 tls = ["rustls", "tokio-rustls", "rustls-pemfile"]
 mtls = ["tls", "x509-parser"]
 tokio-macros = ["tokio/macros"]
+trace = ["tracing-subscriber", "rustls?/logging", "tokio-rustls?/logging", "multer/log"]
 
 [dependencies]
 # Optional serialization dependencies.
@@ -68,11 +69,21 @@ indexmap = { version = "2", features = ["serde"] }
 tempfile = "3"
 async-trait = "0.1.43"
 async-stream = "0.3.2"
-multer = { version = "3.0.0", features = ["tokio-io"] }
+multer = { version = "3.1.0", features = ["tokio-io"] }
 tokio-stream = { version = "0.1.6", features = ["signal", "time"] }
 cookie = { version = "0.18", features = ["percent-encode"] }
 futures = { version = "0.3.30", default-features = false, features = ["std"] }
 state = "0.6"
+
+# tracing
+tracing = { version = "0.1.40", default-features = false, features = ["std"] }
+# tracing-futures = { version = "0.2", default-features = false, features = ["std-future"] }
+
+[dependencies.tracing-subscriber]
+version = "0.3.18"
+optional = true
+default-features = false
+features = ["fmt", "tracing-log"]
 
 [dependencies.rocket_codegen]
 version = "0.6.0-dev"
@@ -95,13 +106,13 @@ features = ["io"]
 [dependencies.rustls]
 version = "0.23"
 default-features = false
-features = ["ring", "logging", "std", "tls12"]
+features = ["ring", "std", "tls12"]
 optional = true
 
 [dependencies.tokio-rustls]
 version = "0.26"
 default-features = false
-features = ["logging", "tls12", "ring"]
+features = ["tls12", "ring"]
 optional = true
 
 [dependencies.rustls-pemfile]
