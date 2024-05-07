@@ -28,20 +28,19 @@ macro_rules! declare_macro {
                 #[allow(unused_imports)]
                 use $crate::trace::PaintExt as _;
 
-                $crate::tracing::event!($crate::tracing::Level::$level, $d ($t)*);
+                $crate::tracing::$level!($d ($t)*);
             })
         }
     );
 }
 
 declare_macro!(
-    launch_info INFO, launch_info_ INFO,
-    launch_meta INFO, launch_meta_ INFO,
-    error ERROR, error_ ERROR,
-    info INFO, info_ INFO,
-    trace TRACE, trace_ TRACE,
-    debug DEBUG, debug_ DEBUG,
-    warn WARN, warn_ WARN,
+    // launch_meta INFO, launch_meta_ INFO,
+    error error, error_ error,
+    info info, info_ info,
+    trace trace, trace_ trace,
+    debug debug, debug_ debug,
+    warn warn, warn_ warn,
 );
 
 pub fn init<'a, T: Into<Option<&'a Config>>>(_config: T) {

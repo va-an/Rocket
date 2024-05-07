@@ -534,7 +534,6 @@ impl Rocket<Build> {
     ///     Ok(())
     /// }
     /// ```
-    #[tracing::instrument(target = "rocket", skip_all)]
     pub async fn ignite(mut self) -> Result<Rocket<Ignite>, Error> {
         self = Fairings::handle_ignite(self).await;
         self.fairings.audit().map_err(|f| ErrorKind::FailedFairings(f.to_vec()))?;
@@ -555,10 +554,6 @@ impl Rocket<Build> {
                 config.secret_key = crate::config::SecretKey::generate()
                     .unwrap_or_else(crate::config::SecretKey::zero);
             }
-        } else if config.known_secret_key_used() {
-            warn!("The configured `secret_key` is exposed and insecure.");
-            warn_!("The configured key is publicly published and thus insecure.");
-            warn_!("Try generating a new key with `head -c64 /dev/urandom | base64`.");
         }
 
         // Initialize the router; check for collisions.
@@ -573,8 +568,8 @@ impl Rocket<Build> {
         // Log everything we know: config, routes, catchers, fairings.
         // TODO: Store/print managed state type names?
         config.pretty_print(self.figment());
-        log_items("📬 ", "Routes", self.routes(), |r| &r.uri.base, |r| &r.uri);
-        log_items("🥅 ", "Catchers", self.catchers(), |c| &c.base, |c| &c.base);
+        log_items("routes", self.routes(), |r| &r.uri.base, |r| &r.uri);
+        log_items("catchers", self.catchers(), |c| &c.base, |c| &c.base);
         self.fairings.pretty_print();
 
         // Ignite the rocket.
@@ -594,20 +589,17 @@ impl Rocket<Build> {
     }
 }
 
-fn log_items<T, I, B, O>(e: &str, t: &str, items: I, base: B, origin: O)
+#[tracing::instrument(name = "items", skip_all, fields(kind = kind))]
+fn log_items<T, I, B, O>(kind: &str, items: I, base: B, origin: O)
     where T: fmt::Display + Copy, I: Iterator<Item = T>,
           B: Fn(&T) -> &Origin<'_>, O: Fn(&T) -> &Origin<'_>
 {
     let mut items: Vec<_> = items.collect();
-    if !items.is_empty() {
-        launch_meta!("{}{}:", e.emoji(), t.magenta());
-    }
-
     items.sort_by_key(|i| origin(i).path().as_str().chars().count());
     items.sort_by_key(|i| origin(i).path().segments().count());
     items.sort_by_key(|i| base(i).path().as_str().chars().count());
     items.sort_by_key(|i| base(i).path().segments().count());
-    items.iter().for_each(|i| launch_meta_!("{}", i));
+    items.iter().for_each(|item| info!(name: "item", %item));
 }
 
 impl Rocket<Ignite> {
@@ -767,9 +759,7 @@ impl Rocket<Orbit> {
             info_!("Forced shutdown is disabled. Runtime settings may be suboptimal.");
         }
 
-        launch_info!("{}{} {}", "🚀 ".emoji(),
-            "Rocket has launched on".bold().primary().linger(),
-            rocket.endpoints[0].underline());
+        tracing::info!(target: "rocket::liftoff", endpoint = %rocket.endpoints[0]);
     }
 
     /// Returns the finalized, active configuration. This is guaranteed to
