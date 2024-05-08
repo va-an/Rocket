@@ -11,6 +11,7 @@ use figment::{Figment, Provider};
 use futures::TryFutureExt;
 
 use crate::shutdown::{Stages, Shutdown};
+use crate::trace::traceable::{Traceable, TraceableCollection};
 use crate::{sentinel, shield::Shield, Catcher, Config, Route};
 use crate::listener::{Bind, DefaultListener, Endpoint, Listener};
 use crate::router::Router;
@@ -567,10 +568,40 @@ impl Rocket<Build> {
 
         // Log everything we know: config, routes, catchers, fairings.
         // TODO: Store/print managed state type names?
-        config.pretty_print(self.figment());
-        log_items("routes", self.routes(), |r| &r.uri.base, |r| &r.uri);
-        log_items("catchers", self.catchers(), |c| &c.base, |c| &c.base);
-        self.fairings.pretty_print();
+        let fairings = self.fairings.unique_set();
+        info_span!("config" [profile = %self.figment().profile()] => {
+            config.trace();
+            self.figment().trace();
+        });
+
+        info_span!("routes" [count = self.routes.len()] => self.routes().trace_all());
+        info_span!("catchers" [count = self.catchers.len()] => self.catchers().trace_all());
+        info_span!("fairings" [count = fairings.len()] => fairings.trace_all());
+
+        // trace::all("routes", self.routes());
+        // tracing::info_span!("routes").in_scope(|| self.routes().for_each(|r| r.trace()));
+        // tracing::info_span!("catchers").in_scope(|| self.catchers().for_each(|c| c.trace()));
+        //     for header in self.policies.values() {
+        //         info!(name: "header", name = header.name().as_str(), value = header.value());
+        //     }
+        //
+        //     warn!("Detected TLS-enabled liftoff without enabling HSTS.");
+        //     warn!("Shield has enabled a default HSTS policy.");
+        //     info!("To remove this warning, configure an HSTS policy.");
+        // });
+
+        // tracing::info_span!("routes")
+        //     .in_scope(|| self.routes().for_each(|r| r.trace()));
+        //     // self.polices.values().trace();
+        //     // for header in self.policies.values() {
+        //     //     info!(name: "header", name = header.name().as_str(), value = header.value());
+        //     // }
+
+        // TODO: Store/print managed state type names?
+        // trace::collection_info!("routes" => self.routes());
+        // trace::collection_info!("catchers" => self.catchers());
+        // trace::collection_info!("fairings" => self.fairings.active_set());
+        // trace::collection_info!("state" => self.active_set());
 
         // Ignite the rocket.
         let rocket: Rocket<Ignite> = Rocket(Igniting {
@@ -759,7 +790,7 @@ impl Rocket<Orbit> {
             info_!("Forced shutdown is disabled. Runtime settings may be suboptimal.");
         }
 
-        tracing::info!(target: "rocket::liftoff", endpoint = %rocket.endpoints[0]);
+        tracing::info!(name: "liftoff", endpoint = %rocket.endpoints[0]);
     }
 
     /// Returns the finalized, active configuration. This is guaranteed to

@@ -116,9 +116,9 @@ struct RocketFmt<S> {
 // }
 
 macro_rules! log {
-    ($this:expr, $event:expr => $fmt:expr $(, $($t:tt)*)?) => {
-        let metadata = $event.metadata();
-        let (i, s, t) = ($this.indent(), $this.style($event), metadata.target());
+    ($this:expr, $metadata:expr => $fmt:expr $(, $($t:tt)*)?) => {
+        let metadata = $metadata;
+        let (i, s, t) = ($this.indent(), $this.style(metadata), metadata.target());
         match *metadata.level() {
             Level::WARN => print!(
                 concat!("{}{} ", $fmt),
@@ -146,8 +146,8 @@ macro_rules! log {
 }
 
 macro_rules! logln {
-    ($this:expr, $event:expr => $fmt:literal $($t:tt)*) => {
-        log!($this, $event => concat!($fmt, "\n") $($t)*);
+    ($this:expr, $meta:expr => $fmt:literal $($t:tt)*) => {
+        log!($this, $meta => concat!($fmt, "\n") $($t)*);
     };
 }
 
@@ -208,8 +208,8 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
         }
     }
 
-    fn style(&self, event: &Event<'_>) -> Style {
-        match *event.metadata().level() {
+    fn style(&self, metadata: &Metadata<'_>) -> Style {
+        match *metadata.level() {
             Level::ERROR => self.default_style.red(),
             Level::WARN => self.default_style.yellow(),
             Level::INFO => self.default_style.blue(),
@@ -219,61 +219,51 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
     }
 
     fn print(&self, event: &Event<'_>) {
-        let style = self.style(event);
-        let fields = event.metadata().fields();
+        let metadata = event.metadata();
+        let style = self.style(metadata);
+        let fields = metadata.fields();
         if let Some(msg) = fields.field("message") {
             event.record_display(|field: &Field, value: &dyn Display| {
                 if field == &msg {
-                    log!(self, event => "{}", value.paint(style));
+                    log!(self, metadata => "{}", value.paint(style));
                 }
             });
 
-            if fields.len() > 1 { print!(" ("); }
-            self.print_fields_compact(false, event);
-            if fields.len() > 1 { print!(")"); }
+            self.print_fields_compact(false, metadata, event);
         } else if !fields.is_empty() {
-            self.print_fields_compact(true, event);
-        }
-
-        if !fields.is_empty() {
-            println!("");
+            self.print_fields_compact(true, metadata, event);
         }
     }
 
-    fn print_fields_compact(&self, prefix: bool, event: &Event<'_>) {
-        let key_style = self.style(event).bold();
-        let val_style = self.style(event).primary();
+    fn print_fields_compact<F>(&self, prefix: bool, metadata: &Metadata<'_>, fields: F)
+        where F: RecordFields
+    {
+        let key_style = self.style(metadata).bold();
+        let val_style = self.style(metadata).primary();
         let mut printed = false;
-        event.record_display(|field: &Field, val: &dyn Display| {
+        fields.record_display(|field: &Field, val: &dyn Display| {
             let key = field.name();
             if key != "message" {
                 if !printed && prefix {
-                    log!(self, event => "{}: {}", key.paint(key_style), val.paint(val_style));
+                    log!(self, metadata => "{}: {}", key.paint(key_style), val.paint(val_style));
                 } else {
-                    if printed { print!(" "); }
-                    print!("{}: {}", key.paint(key_style), val.paint(val_style));
+                    print!(" {}: {}", key.paint(key_style), val.paint(val_style));
                 }
 
                 printed = true;
             }
         });
+
+        println!();
     }
 
-    fn print_fields(&self, event: &Event<'_>) {
-        let style = self.style(event);
-        event.record_display(|key: &Field, value: &dyn Display| {
+    fn print_fields<F: RecordFields>(&self, metadata: &Metadata<'_>, fields: F) {
+        let style = self.style(metadata);
+        fields.record_display(|key: &Field, value: &dyn Display| {
             if key.name() != "message" {
-                logln!(self, event => "{}: {}", key.paint(style), value.paint(style).primary());
+                logln!(self, metadata => "{}: {}", key.paint(style), value.paint(style).primary());
             }
         })
-    }
-
-    fn write_config(&self, event: &Event<'_>) {
-        // eprintln!("  > config [name = {}]", event.metadata().name());
-        match event.metadata().name() {
-            "values" => self.print_fields(event),
-            _ => self.print(event),
-        }
     }
 }
 
@@ -287,13 +277,20 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<S> {
         // eprintln!("[name = {}, target = {}]", metadata.name(), metadata.target());
         if let Some(span) = ctxt.event_span(event) {
             // eprintln!("  > [name = {}, target = {}]", span.name(), span.metadata().target());
-            return match span.name() {
-                "config" => self.write_config(event),
+            return match (span.name(), event.metadata().name()) {
+                ("config", "config") => self.print_fields(event.metadata(), event),
                 _ => self.print(event),
             };
         }
 
-        self.print(event);
+        match event.metadata().name() {
+            "liftoff" => {
+                let data = Data::new(event);
+                logln!(self, event.metadata() => "rocket has launched from {}", &data["endpoint"]);
+
+            }
+            _ => self.print(event),
+        }
     }
 
     fn on_new_span(&self, attrs: &Attributes<'_>, id: &Id, ctx: Context<'_, S>) {
@@ -301,9 +298,11 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<S> {
         let data = Data::new(attrs);
         match span.metadata().name() {
             "config" => println!("configured for {}", &data["profile"]),
-            name => println!("{name} {:?}", Formatter(|f| {
-                f.debug_map().entries(data.map.iter().map(|(k, v)| (k, v))).finish()
-            }))
+            name => {
+                log!(self, span.metadata() => "{}", name);
+                self.print_fields_compact(false, span.metadata(), attrs);
+                // f.debug_map().entries(data.map.iter().map(|(k, v)| (k, v))).finish()
+            }
         }
 
         span.extensions_mut().replace(data);
