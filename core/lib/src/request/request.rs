@@ -1112,10 +1112,14 @@ impl<'r> Request<'r> {
                 // a security issue with Hyper, there isn't much we can do.
                 #[cfg(debug_assertions)]
                 if Origin::parse(uri.as_str()).is_err() {
-                    warn!("Hyper/Rocket URI validity discord: {:?}", uri.as_str());
-                    info_!("Hyper believes the URI is valid while Rocket disagrees.");
-                    info_!("This is likely a Hyper bug with potential security implications.");
-                    warn_!("Please report this warning to Rocket's GitHub issue tracker.");
+                    warn!(
+                        name: "uri_discord",
+                        %uri,
+                        "Hyper/Rocket URI validity discord: {uri}\n\
+                        Hyper believes the URI is valid while Rocket disagrees.\n\
+                        This is likely a Hyper bug with potential security implications.\n\
+                        Please report this warning to Rocket's GitHub issue tracker."
+                    )
                 }
 
                 Origin::new(uri.path(), uri.query().map(Cow::Borrowed))

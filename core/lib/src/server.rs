@@ -17,10 +17,16 @@ use crate::error::log_server_error;
 use crate::data::{IoStream, RawStream};
 use crate::util::{spawn_inspect, FutureExt, ReaderStream};
 use crate::http::Status;
+use crate::trace::traceable::TraceableCollection;
 
 type Result<T, E = crate::Error> = std::result::Result<T, E>;
 
 impl Rocket<Orbit> {
+    #[tracing::instrument("request", skip_all, fields(
+        method = %parts.method,
+        uri = %parts.uri,
+        autohandled
+    ))]
     async fn service<T: for<'a> Into<RawStream<'a>>>(
         self: Arc<Self>,
         parts: http::request::Parts,
@@ -32,6 +38,7 @@ impl Rocket<Orbit> {
             Request::from_hyp(rocket, parts, connection).unwrap_or_else(|e| e)
         });
 
+        debug_span!("headers" => request.inner().headers().iter().trace_all_debug());
         let mut response = request.into_response(
             stream,
             |rocket, request, data| Box::pin(rocket.preprocess(request, data)),

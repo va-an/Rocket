@@ -77,6 +77,11 @@ impl ErasedRequest {
         ErasedRequest { _rocket: rocket, _parts: parts, request, }
     }
 
+    pub fn inner(&self) -> &Request<'_> {
+        static_assert_covariance!(Request);
+        &self.request
+    }
+
     pub async fn into_response<T, D>(
         self,
         raw_stream: D,

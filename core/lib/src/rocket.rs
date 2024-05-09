@@ -563,45 +563,20 @@ impl Rocket<Build> {
         self.catchers.clone().into_iter().for_each(|c| router.add_catcher(c));
         router.finalize().map_err(ErrorKind::Collisions)?;
 
-        // Finally, freeze managed state.
+        // Finally, freeze managed state for faster access later.
         self.state.freeze();
 
         // Log everything we know: config, routes, catchers, fairings.
         // TODO: Store/print managed state type names?
         let fairings = self.fairings.unique_set();
         info_span!("config" [profile = %self.figment().profile()] => {
-            config.trace();
-            self.figment().trace();
+            config.trace_info();
+            self.figment().trace_debug();
         });
 
-        info_span!("routes" [count = self.routes.len()] => self.routes().trace_all());
-        info_span!("catchers" [count = self.catchers.len()] => self.catchers().trace_all());
-        info_span!("fairings" [count = fairings.len()] => fairings.trace_all());
-
-        // trace::all("routes", self.routes());
-        // tracing::info_span!("routes").in_scope(|| self.routes().for_each(|r| r.trace()));
-        // tracing::info_span!("catchers").in_scope(|| self.catchers().for_each(|c| c.trace()));
-        //     for header in self.policies.values() {
-        //         info!(name: "header", name = header.name().as_str(), value = header.value());
-        //     }
-        //
-        //     warn!("Detected TLS-enabled liftoff without enabling HSTS.");
-        //     warn!("Shield has enabled a default HSTS policy.");
-        //     info!("To remove this warning, configure an HSTS policy.");
-        // });
-
-        // tracing::info_span!("routes")
-        //     .in_scope(|| self.routes().for_each(|r| r.trace()));
-        //     // self.polices.values().trace();
-        //     // for header in self.policies.values() {
-        //     //     info!(name: "header", name = header.name().as_str(), value = header.value());
-        //     // }
-
-        // TODO: Store/print managed state type names?
-        // trace::collection_info!("routes" => self.routes());
-        // trace::collection_info!("catchers" => self.catchers());
-        // trace::collection_info!("fairings" => self.fairings.active_set());
-        // trace::collection_info!("state" => self.active_set());
+        info_span!("routes" [count = self.routes.len()] => self.routes().trace_all_info());
+        info_span!("catchers" [count = self.catchers.len()] => self.catchers().trace_all_info());
+        info_span!("fairings" [count = fairings.len()] => fairings.trace_all_info());
 
         // Ignite the rocket.
         let rocket: Rocket<Ignite> = Rocket(Igniting {

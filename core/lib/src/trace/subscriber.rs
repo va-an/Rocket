@@ -8,7 +8,7 @@ use std::fmt::{self, Debug, Display};
 use tracing::{Event, Level, Metadata, Subscriber};
 use tracing::level_filters::LevelFilter;
 use tracing::field::{Field, Visit};
-use tracing::span::{Attributes, Id};
+use tracing::span::{Attributes, Id, Record};
 
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::layer::Context;
@@ -24,14 +24,14 @@ use crate::config::{Config, CliColors};
 use crate::util::Formatter;
 
 pub trait PaintExt: Sized {
-    fn emoji(self) -> Painted<Self>;
+    fn emoji(self) -> Painted<&'static str>;
 }
 
-impl PaintExt for &str {
+impl PaintExt for Painted<&'static str> {
     /// Paint::masked(), but hidden on Windows due to broken output. See #1122.
-    fn emoji(self) -> Painted<Self> {
+    fn emoji(self) -> Painted<&'static str> {
         #[cfg(windows)] { Paint::new("").mask() }
-        #[cfg(not(windows))] { Paint::new(self).mask() }
+        #[cfg(not(windows))] { self.mask() }
     }
 }
 
@@ -63,7 +63,7 @@ pub(crate) struct Data {
 }
 
 impl Data {
-    pub fn new<T: RecordFields>(attrs: &T) -> Self {
+    pub fn new<T: RecordFields>(attrs: T) -> Self {
         let mut data = Data {
             // start: Instant::now(),
             map: TinyVec::new(),
@@ -104,51 +104,6 @@ struct RocketFmt<S> {
     filter: filter::Targets,
     default_style: Style,
     _subscriber: PhantomData<fn() -> S>
-}
-
-// struct Printer {
-//     level: Level,
-// }
-//
-// impl Printer {
-//     fn print(event: &Event)
-//
-// }
-
-macro_rules! log {
-    ($this:expr, $metadata:expr => $fmt:expr $(, $($t:tt)*)?) => {
-        let metadata = $metadata;
-        let (i, s, t) = ($this.indent(), $this.style(metadata), metadata.target());
-        match *metadata.level() {
-            Level::WARN => print!(
-                concat!("{}{} ", $fmt),
-                i, "warning:".paint(s).yellow().bold() $(, $($t)*)?
-            ),
-            Level::ERROR => print!(
-                concat!("{}{} ", $fmt),
-                i, "error:".paint(s).red().bold() $(, $($t)*)?
-            ),
-            level@(Level::DEBUG | Level::TRACE) => match (metadata.file(), metadata.line()) {
-                (Some(f), Some(l)) => print!(
-                    concat!("{}[{} {}{}{} {}] ", $fmt),
-                    i, level.paint(s).bold(),
-                    RelPath(f.into()).underline(), ":".paint(s).dim(), l, t.paint(s).dim()
-                    $(, $($t)*)?
-                ),
-                (_, _) => print!(
-                    concat!("{}[{} {}] ", $fmt),
-                    i, level.paint(s).bold(), t $(, $($t)*)?
-                ),
-            }
-            _ => print!(concat!("{}", $fmt), i $(, $($t)*)?),
-        }
-    };
-}
-
-macro_rules! logln {
-    ($this:expr, $meta:expr => $fmt:literal $($t:tt)*) => {
-        log!($this, $meta => concat!($fmt, "\n") $($t)*);
-    };
 }
 
 struct DisplayVisit<F>(F);
@@ -200,13 +155,26 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
     }
 
     fn indent(&self) -> &'static str {
-        match self.depth.load(Ordering::Acquire) {
-            0 => "",
-            1 => "    >> ",
-            2 => "        >> ",
-            _ => "            >> ",
-        }
+        static INDENT: &[&str] = &["", "   ", "      "];
+        INDENT.get(self.depth()).copied().unwrap_or("--")
     }
+
+    fn marker(&self) -> &'static str {
+        static MARKER: &[&str] = &["", ">> ", ":: "];
+        MARKER.get(self.depth()).copied().unwrap_or("-- ")
+    }
+
+    fn depth(&self) -> usize {
+        self.depth.load(Ordering::Acquire) as usize
+    }
+
+    // fn increase_depth(&self) {
+    //     self.depth.fetch_add(1, Ordering::AcqRel);
+    // }
+    //
+    // fn decrease_depth(&self) {
+    //     self.depth.fetch_sub(1, Ordering::AcqRel);
+    // }
 
     fn style(&self, metadata: &Metadata<'_>) -> Style {
         match *metadata.level() {
@@ -218,38 +186,65 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
         }
     }
 
-    fn print(&self, event: &Event<'_>) {
-        let metadata = event.metadata();
-        let style = self.style(metadata);
-        let fields = metadata.fields();
-        if let Some(msg) = fields.field("message") {
-            event.record_display(|field: &Field, value: &dyn Display| {
-                if field == &msg {
-                    log!(self, metadata => "{}", value.paint(style));
-                }
-            });
-
-            self.print_fields_compact(false, metadata, event);
-        } else if !fields.is_empty() {
-            self.print_fields_compact(true, metadata, event);
+    fn print_prefix(&self, meta: &Metadata<'_>) {
+        let (i, m, s) = (self.indent(), self.marker(), self.style(meta));
+        match *meta.level() {
+            Level::WARN => print!("{i}{m}{} ", "warning:".paint(s).bold()),
+            Level::ERROR => print!("{i}{m}{} ", "error:".paint(s).bold()),
+            Level::DEBUG => print!("{i}{m}[{} {}] ", "debug".paint(s).bold(), meta.target()),
+            Level::TRACE => match (meta.file(), meta.line()) {
+                (Some(file), Some(line)) => print!(
+                    "{i}{m}[{level} {target} {path}:{line}] ",
+                    level = "trace".paint(s).bold(),
+                    target = meta.target().paint(s).dim(),
+                    path = RelPath(file.into()).underline(),
+                ),
+                _ => print!("{i}{m}[{} {}] ", "trace".paint(s).bold(), meta.target())
+            }
+            _ => print!("{i}{m}"),
         }
     }
 
-    fn print_fields_compact<F>(&self, prefix: bool, metadata: &Metadata<'_>, fields: F)
-        where F: RecordFields
-    {
+    fn print<F: RecordFields>(&self, metadata: &Metadata<'_>, data: F) {
+        let style = self.style(metadata);
+        let fields = metadata.fields();
+        if !fields.is_empty() {
+            self.print_prefix(metadata);
+        }
+
+        let message = fields.field("message");
+        if let Some(message_field) = &message {
+            data.record_display(|field: &Field, value: &dyn Display| {
+                if field == message_field {
+                    for (i, line) in value.to_string().lines().enumerate() {
+                        if i != 0 {
+                            print!("{}{} ", self.indent(), "++".paint(style).dim());
+                        }
+
+                        println!("{}", line.paint(style));
+                    }
+                }
+            });
+        }
+
+        if message.is_some() && fields.len() > 1 {
+            print!("{}{} ", self.indent(), "++".paint(style).dim());
+            self.print_compact_fields(metadata, data)
+        } else if message.is_none() && !fields.is_empty() {
+            self.print_compact_fields(metadata, data);
+        }
+    }
+
+    fn print_compact_fields<F: RecordFields>(&self, metadata: &Metadata<'_>, data: F) {
         let key_style = self.style(metadata).bold();
         let val_style = self.style(metadata).primary();
+
         let mut printed = false;
-        fields.record_display(|field: &Field, val: &dyn Display| {
+        data.record_display(|field: &Field, val: &dyn Display| {
             let key = field.name();
             if key != "message" {
-                if !printed && prefix {
-                    log!(self, metadata => "{}: {}", key.paint(key_style), val.paint(val_style));
-                } else {
-                    print!(" {}: {}", key.paint(key_style), val.paint(val_style));
-                }
-
+                if printed { print!(" "); }
+                print!("{}: {}", key.paint(key_style), val.paint(val_style));
                 printed = true;
             }
         });
@@ -257,11 +252,14 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
         println!();
     }
 
-    fn print_fields<F: RecordFields>(&self, metadata: &Metadata<'_>, fields: F) {
+    fn print_fields<F>(&self, metadata: &Metadata<'_>, fields: F)
+        where F: RecordFields
+    {
         let style = self.style(metadata);
         fields.record_display(|key: &Field, value: &dyn Display| {
             if key.name() != "message" {
-                logln!(self, metadata => "{}: {}", key.paint(style), value.paint(style).primary());
+                self.print_prefix(metadata);
+                println!("{}: {}", key.paint(style), value.paint(style).primary());
             }
         })
     }
@@ -272,24 +270,18 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<S> {
         self.filter.would_enable(metadata.target(), metadata.level())
     }
 
-    fn on_event(&self, event: &Event<'_>, ctxt: Context<'_, S>) {
-        // let metadata = event.metadata();
-        // eprintln!("[name = {}, target = {}]", metadata.name(), metadata.target());
-        if let Some(span) = ctxt.event_span(event) {
-            // eprintln!("  > [name = {}, target = {}]", span.name(), span.metadata().target());
-            return match (span.name(), event.metadata().name()) {
-                ("config", "config") => self.print_fields(event.metadata(), event),
-                _ => self.print(event),
-            };
-        }
-
-        match event.metadata().name() {
+    fn on_event(&self, event: &Event<'_>, _: Context<'_, S>) {
+        let (meta, data) = (event.metadata(), Data::new(event));
+        let style = self.style(meta);
+        match meta.name() {
+            "config" => self.print_fields(meta, event),
             "liftoff" => {
-                let data = Data::new(event);
-                logln!(self, event.metadata() => "rocket has launched from {}", &data["endpoint"]);
-
+                self.print_prefix(meta);
+                println!("{}{} {}", "🚀 ".paint(style).emoji(),
+                    "Rocket has launched from".paint(style).primary().bold(),
+                    &data["endpoint"].paint(style).primary().bold().underline());
             }
-            _ => self.print(event),
+            _ => self.print(meta, event),
         }
     }
 
@@ -299,26 +291,26 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<S> {
         match span.metadata().name() {
             "config" => println!("configured for {}", &data["profile"]),
             name => {
-                log!(self, span.metadata() => "{}", name);
-                self.print_fields_compact(false, span.metadata(), attrs);
-                // f.debug_map().entries(data.map.iter().map(|(k, v)| (k, v))).finish()
+                self.print_prefix(span.metadata());
+                print!("{name} ");
+                self.print_compact_fields(span.metadata(), attrs);
             }
         }
 
         span.extensions_mut().replace(data);
     }
 
+    fn on_record(&self, id: &Id, values: &Record<'_>, ctxt: Context<'_, S>) {
+        let metadata = ctxt.span(id).unwrap().metadata();
+        self.print_prefix(metadata);
+        self.print_compact_fields(metadata, values);
+    }
+
     fn on_enter(&self, _: &Id, _: Context<'_, S>) {
         self.depth.fetch_add(1, Ordering::AcqRel);
-        // let metadata = ctxt.span(id).unwrap().metadata();
-        // eprintln!("enter [name={}] [target={}] {:?}", metadata.name(),
-        // metadata.target(), metadata.fields());
     }
 
     fn on_exit(&self, _: &Id, _: Context<'_, S>) {
         self.depth.fetch_sub(1, Ordering::AcqRel);
-        // let metadata = ctxt.span(id).unwrap().metadata();
-        // eprintln!("exit [name={}] [target={}] {:?}", metadata.name(),
-        // metadata.target(), metadata.fields());
     }
 }

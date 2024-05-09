@@ -1,6 +1,7 @@
 use yansi::Paint;
 use futures::future::{FutureExt, Future};
 
+use crate::trace::traceable::Traceable;
 use crate::{route, Rocket, Orbit, Request, Response, Data};
 use crate::data::IoHandler;
 use crate::http::{Method, Status, Header};
@@ -96,8 +97,6 @@ impl Rocket<Orbit> {
         data: Data<'r>,
         // io_stream: impl Future<Output = io::Result<IoStream>> + Send,
     ) -> Response<'r> {
-        info!("{}:", request);
-
         // Remember if the request is `HEAD` for later body stripping.
         let was_head_request = request.method() == Method::Head;
 
@@ -105,7 +104,7 @@ impl Rocket<Orbit> {
         let mut response = match self.route(request, data).await {
             Outcome::Success(response) => response,
             Outcome::Forward((data, _)) if request.method() == Method::Head => {
-                info_!("Autohandling {} request.", "HEAD".primary().bold());
+                tracing::Span::current().record("autohandled", true);
 
                 // Dispatch the request again with Method `GET`.
                 request._set_method(Method::Get);
@@ -181,6 +180,11 @@ impl Rocket<Orbit> {
     /// returns success or error, or there are no additional routes to try, in
     /// which case a `Forward` with the last forwarding state is returned.
     #[inline]
+    #[tracing::instrument("routing", skip_all, fields(
+        method = %request.method(),
+        uri = %request.uri(),
+        format = request.format().map(display),
+    ))]
     async fn route<'s, 'r: 's>(
         &'s self,
         request: &'r Request<'s>,
@@ -191,7 +195,6 @@ impl Rocket<Orbit> {
         let mut status = Status::NotFound;
         for route in self.router.route(request) {
             // Retrieve and set the requests parameters.
-            info_!("Matched: {}", route);
             request.set_route(route);
 
             let name = route.name.as_deref();
@@ -200,16 +203,17 @@ impl Rocket<Orbit> {
 
             // Check if the request processing completed (Some) or if the
             // request needs to be forwarded. If it does, continue the loop
-            // (None) to try again.
-            info_!("{}", outcome.log_display());
+            route.trace_info();
+            outcome.trace_info();
             match outcome {
                 o@Outcome::Success(_) | o@Outcome::Error(_) => return o,
                 Outcome::Forward(forwarded) => (data, status) = forwarded,
             }
         }
 
-        error_!("No matching routes for {}.", request);
-        Outcome::Forward((data, status))
+        let outcome = Outcome::Forward((data, status));
+        outcome.trace_info();
+        outcome
     }
 
     // Invokes the catcher for `status`. Returns the response on success.

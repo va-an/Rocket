@@ -1,35 +1,49 @@
 use crate::fairing::Fairing;
-use crate::{Catcher, Config, Route};
+use crate::{route, Catcher, Config, Route};
 use crate::util::Formatter;
 
 use figment::Figment;
 use rocket::http::Header;
+use tracing::Level;
 
 pub trait Traceable {
-    fn trace(&self);
+    fn trace(&self, level: Level);
+
+    #[inline(always)] fn trace_info(&self) { self.trace(Level::INFO) }
+    #[inline(always)] fn trace_warn(&self) { self.trace(Level::WARN) }
+    #[inline(always)] fn trace_error(&self) { self.trace(Level::ERROR) }
+    #[inline(always)] fn trace_debug(&self) { self.trace(Level::DEBUG) }
+    #[inline(always)] fn trace_trace(&self) { self.trace(Level::TRACE) }
 }
 
-pub trait TraceableCollection {
-    fn trace_all(self);
+pub trait TraceableCollection: Sized {
+    fn trace_all(self, level: Level);
+
+    #[inline(always)] fn trace_all_info(self) { self.trace_all(Level::INFO) }
+    #[inline(always)] fn trace_all_warn(self) { self.trace_all(Level::WARN) }
+    #[inline(always)] fn trace_all_error(self) { self.trace_all(Level::ERROR) }
+    #[inline(always)] fn trace_all_debug(self) { self.trace_all(Level::DEBUG) }
+    #[inline(always)] fn trace_all_trace(self) { self.trace_all(Level::TRACE) }
 }
 
 impl<T: Traceable, I: IntoIterator<Item = T>> TraceableCollection for I {
-    fn trace_all(self) {
-        self.into_iter().for_each(|i| i.trace())
+    fn trace_all(self, level: Level) {
+        self.into_iter().for_each(|i| i.trace(level))
     }
 }
 
 impl<T: Traceable> Traceable for &T {
-    fn trace(&self) {
-        T::trace(self)
+    #[inline(always)]
+    fn trace(&self, level: Level) {
+        T::trace(self, level)
     }
 }
 
 impl Traceable for Figment {
-    fn trace(&self) {
+    fn trace(&self, level: Level) {
         for param in Config::PARAMETERS {
             if let Some(source) = self.find_metadata(param) {
-                tracing::trace! {
+                event! { level, "figment",
                     param,
                     %source.name,
                     source.source = source.source.as_ref().map(|s| s.to_string()),
@@ -40,8 +54,7 @@ impl Traceable for Figment {
         // Check for now deprecated config values.
         for (key, replacement) in Config::DEPRECATED_KEYS {
             if let Some(source) = self.find_metadata(key) {
-                warn! {
-                    name: "deprecated",
+                event! { Level::WARN, "deprecated",
                     key,
                     replacement,
                     %source.name,
@@ -54,9 +67,8 @@ impl Traceable for Figment {
 }
 
 impl Traceable for Config {
-    fn trace(&self) {
-        info! {
-            name: "config",
+    fn trace(&self, level: Level) {
+        event! { level, "config",
             http2 = cfg!(feature = "http2"),
             log_level = self.log_level.map(|l| l.as_str()),
             cli_colors = %self.cli_colors,
@@ -91,9 +103,9 @@ impl Traceable for Config {
             if !self.secret_key.is_provided() {
                 warn! {
                     name: "volatile_secret_key",
-                    "secrets enabled without configuring a stable `secret_key`; \
-                    private/signed cookies will become unreadable after restarting; \
-                    disable the `secrets` feature or configure a `secret_key`; \
+                    "secrets enabled without configuring a stable `secret_key`\n\
+                    private/signed cookies will become unreadable after restarting\n\
+                    disable the `secrets` feature or configure a `secret_key`\n\
                     this becomes a hard error in non-debug profiles",
                 }
             }
@@ -116,9 +128,8 @@ impl Traceable for Config {
 }
 
 impl Traceable for Route {
-    fn trace(&self) {
-        info! {
-            name: "route",
+    fn trace(&self, level: Level) {
+        event! { level, "route",
             name = self.name.as_ref().map(|n| &**n),
             method = %self.method,
             rank = self.rank,
@@ -136,9 +147,8 @@ impl Traceable for Route {
 }
 
 impl Traceable for Catcher {
-    fn trace(&self) {
-        info! {
-            name: "catcher",
+    fn trace(&self, level: Level) {
+        event! { level, "catcher",
             name = self.name.as_ref().map(|n| &**n),
             code = self.code,
             rank = self.rank,
@@ -148,13 +158,13 @@ impl Traceable for Catcher {
 }
 
 impl Traceable for &dyn Fairing {
-    fn trace(&self) {
-        info!(name: "fairing", name = self.info().name, kind = %self.info().kind)
+    fn trace(&self, level: Level) {
+        event!(level, "fairing", name = self.info().name, kind = %self.info().kind)
     }
 }
 
 impl Traceable for figment::error::Kind {
-    fn trace(&self) {
+    fn trace(&self, _: Level) {
         use figment::error::{OneOf as V, Kind::*};
 
         match self {
@@ -175,7 +185,7 @@ impl Traceable for figment::error::Kind {
 }
 
 impl Traceable for figment::Error {
-    fn trace(&self) {
+    fn trace(&self, _: Level) {
         for e in self.clone() {
             let span = tracing::error_span! {
                 "config",
@@ -184,16 +194,22 @@ impl Traceable for figment::Error {
                     Some(metadata.interpolate(profile, path))
                 }),
                 source.name = e.metadata.as_ref().map(|m| &*m.name),
-                source.source = e.metadata.as_ref().and_then(|m| Some(m.source.as_ref()?.to_string())),
+                source.source = e.metadata.as_ref().and_then(|m| m.source.as_ref()).map(display),
             };
 
-            span.in_scope(|| e.kind.trace());
+            span.in_scope(|| e.kind.trace_error());
         }
     }
 }
 
 impl Traceable for Header<'_> {
-    fn trace(&self) {
-        info!(name: "header", name = self.name().as_str(), value = self.value());
+    fn trace(&self, level: Level) {
+        event!(level, "header", name = self.name().as_str(), value = self.value());
+    }
+}
+
+impl Traceable for route::Outcome<'_> {
+    fn trace(&self, level: Level) {
+        event!(level, "outcome", outcome = self.dbg_str(), status = self.status().code);
     }
 }

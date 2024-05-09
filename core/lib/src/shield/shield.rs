@@ -194,7 +194,7 @@ impl Fairing for Shield {
             && !self.is_enabled::<Hsts>();
 
         info_span!("shield" [policies = self.policies.len()] => {
-            self.policies.values().trace_all();
+            self.policies.values().trace_all_info();
 
             if force_hsts {
                 warn!("Detected TLS-enabled liftoff without enabling HSTS.");

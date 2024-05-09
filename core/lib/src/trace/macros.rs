@@ -21,7 +21,6 @@ macro_rules! declare_macro {
             ($d ($t:tt)*) => ({
                 #[allow(unused_imports)]
                 use $crate::trace::macros::PaintExt as _;
-
                 $crate::tracing::$level!($d ($t)*);
             })
         }
@@ -46,10 +45,27 @@ macro_rules! declare_span_macro {
         #[macro_export]
         macro_rules! $name {
             ($n:literal $d ([ $d ($f:tt)* ])? => $in_scope:expr) => ({
-                $crate::tracing::span!(tracing::Level::$level, $n $d (, $d ($f)* )?).in_scope(|| $in_scope);
+                $crate::tracing::span!(tracing::Level::$level, $n $d (, $d ($f)* )?)
+                    .in_scope(|| $in_scope);
             })
         }
     );
 }
 
-declare_span_macro!(info_span INFO, trace_span TRACE);
+declare_span_macro!(info_span INFO, trace_span TRACE, debug_span DEBUG);
+
+macro_rules! event {
+    ($level:expr, $($args:tt)*) => {{
+        match $level {
+            $crate::tracing::Level::ERROR => event!(@$crate::tracing::Level::ERROR, $($args)*),
+            $crate::tracing::Level::WARN => event!(@$crate::tracing::Level::WARN, $($args)*),
+            $crate::tracing::Level::INFO => event!(@$crate::tracing::Level::INFO, $($args)*),
+            $crate::tracing::Level::DEBUG => event!(@$crate::tracing::Level::DEBUG, $($args)*),
+            $crate::tracing::Level::TRACE => event!(@$crate::tracing::Level::TRACE, $($args)*),
+        }
+    }};
+
+    (@$level:expr, $n:expr, $($args:tt)*) => {{
+        $crate::tracing::event!(name: $n, target: concat!("rocket::", $n), $level, $($args)*);
+    }};
+}

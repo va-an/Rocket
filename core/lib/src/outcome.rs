@@ -712,7 +712,7 @@ crate::export! {
 
 impl<S, E, F> Outcome<S, E, F> {
     #[inline]
-    fn dbg_str(&self) -> &'static str {
+    pub(crate) fn dbg_str(&self) -> &'static str {
         match self {
             Success(..) => "Success",
             Error(..) => "Error",
@@ -730,24 +730,13 @@ impl<S, E, F> Outcome<S, E, F> {
     }
 }
 
-pub(crate) struct Display<'a, 'r>(&'a route::Outcome<'r>);
-
-impl fmt::Display for Display<'_, '_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", "Outcome: ".primary().bold())?;
-
-        let color = self.0.color();
-        match self.0 {
-            Success(r) => write!(f, "{}({})", "Success".paint(color), r.status().primary()),
-            Error(s) => write!(f, "{}({})", "Error".paint(color), s.primary()),
-            Forward((_, s)) => write!(f, "{}({})", "Forward".paint(color), s.primary()),
+impl route::Outcome<'_> {
+    pub(crate) fn status(&self) -> Status {
+        match self {
+            Success(r) => r.status(),
+            Error(s) => *s,
+            Forward((_, s)) => *s,
         }
-    }
-}
-
-impl<'r> route::Outcome<'r> {
-    pub(crate) fn log_display(&self) -> Display<'_, 'r> {
-        Display(self)
     }
 }
 
