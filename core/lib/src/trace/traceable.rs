@@ -1,5 +1,5 @@
 use crate::fairing::Fairing;
-use crate::{route, Catcher, Config, Route};
+use crate::{route, Catcher, Config, Response, Route};
 use crate::util::Formatter;
 
 use figment::Figment;
@@ -46,7 +46,7 @@ impl Traceable for Figment {
                 event! { level, "figment",
                     param,
                     %source.name,
-                    source.source = source.source.as_ref().map(|s| s.to_string()),
+                    source.source = source.source.as_ref().map(display),
                 }
             }
         }
@@ -58,7 +58,7 @@ impl Traceable for Figment {
                     key,
                     replacement,
                     %source.name,
-                    source.source = source.source.as_ref().map(|s| s.to_string()),
+                    source.source = source.source.as_ref().map(display),
                     "config key `{key}` is deprecated and has no meaning"
                 }
             }
@@ -78,7 +78,7 @@ impl Traceable for Config {
             ip_header = self.ip_header.as_ref().map(|s| s.as_str()),
             proxy_proto_header = self.proxy_proto_header.as_ref().map(|s| s.as_str()),
             limits = %Formatter(|f| f.debug_map()
-                .entries(self.limits.limits.iter().map(|(k, v)| (k.as_str(), v.to_string())))
+                .entries(self.limits.limits.iter().map(|(k, v)| (k.as_str(), display(v))))
                 .finish()),
             temp_dir = %self.temp_dir.relative().display(),
             keep_alive = (self.keep_alive != 0).then_some(self.keep_alive),
@@ -210,6 +210,23 @@ impl Traceable for Header<'_> {
 
 impl Traceable for route::Outcome<'_> {
     fn trace(&self, level: Level) {
-        event!(level, "outcome", outcome = self.dbg_str(), status = self.status().code);
+        event!(level, "outcome",
+            outcome = match self {
+                Self::Success(..) => "success",
+                Self::Error(..) => "error",
+                Self::Forward(..) => "forward",
+            },
+            status = match self {
+                Self::Success(r) => r.status().code,
+                Self::Error(s) => s.code,
+                Self::Forward((_, s)) => s.code,
+            },
+        )
+    }
+}
+
+impl Traceable for Response<'_> {
+    fn trace(&self, level: Level) {
+        event!(level, "response", status = self.status().code);
     }
 }

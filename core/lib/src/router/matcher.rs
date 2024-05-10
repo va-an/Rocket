@@ -65,7 +65,9 @@ impl Route {
     /// // by default, so Rocket would route the request to `b`, not `a`.
     /// assert!(b.rank < a.rank);
     /// ```
+    #[tracing::instrument(level = "trace", name = "matching", skip_all, ret)]
     pub fn matches(&self, request: &Request<'_>) -> bool {
+        trace!(route.method = %self.method, request.method = %request.method());
         self.method == request.method()
             && paths_match(self, request)
             && queries_match(self, request)
@@ -139,7 +141,7 @@ impl Catcher {
 }
 
 fn paths_match(route: &Route, req: &Request<'_>) -> bool {
-    trace!("checking path match: route {} vs. request {}", route, req);
+    trace!(route.uri = %route.uri, request.uri = %req.uri());
     let route_segments = &route.uri.metadata.uri_segments;
     let req_segments = req.uri().path().segments();
 
@@ -169,7 +171,11 @@ fn paths_match(route: &Route, req: &Request<'_>) -> bool {
 }
 
 fn queries_match(route: &Route, req: &Request<'_>) -> bool {
-    trace!("checking query match: route {} vs. request {}", route, req);
+    trace!(
+        route.query = route.uri.query().map(display),
+        request.query = req.uri().query().map(display),
+    );
+
     if matches!(route.uri.metadata.query_color, None | Some(Color::Wild)) {
         return true;
     }
@@ -193,7 +199,11 @@ fn queries_match(route: &Route, req: &Request<'_>) -> bool {
 }
 
 fn formats_match(route: &Route, req: &Request<'_>) -> bool {
-    trace!("checking format match: route {} vs. request {}", route, req);
+    trace!(
+        route.format = route.format.as_ref().map(display),
+        request.format = req.format().map(display),
+    );
+
     let route_format = match route.format {
         Some(ref format) => format,
         None => return true,

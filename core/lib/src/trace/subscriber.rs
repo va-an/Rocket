@@ -59,7 +59,7 @@ pub(crate) fn init(config: Option<&Config>) {
 
 pub(crate) struct Data {
     // start: Instant,
-    map: TinyVec<[(&'static str, String); 2]>,
+    map: TinyVec<[(&'static str, String); 3]>,
 }
 
 impl Data {
@@ -156,7 +156,7 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
 
     fn indent(&self) -> &'static str {
         static INDENT: &[&str] = &["", "   ", "      "];
-        INDENT.get(self.depth()).copied().unwrap_or("--")
+        INDENT.get(self.depth()).copied().unwrap_or("         ")
     }
 
     fn marker(&self) -> &'static str {
@@ -167,14 +167,6 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
     fn depth(&self) -> usize {
         self.depth.load(Ordering::Acquire) as usize
     }
-
-    // fn increase_depth(&self) {
-    //     self.depth.fetch_add(1, Ordering::AcqRel);
-    // }
-    //
-    // fn decrease_depth(&self) {
-    //     self.depth.fetch_sub(1, Ordering::AcqRel);
-    // }
 
     fn style(&self, metadata: &Metadata<'_>) -> Style {
         match *metadata.level() {
@@ -229,10 +221,15 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
 
         if message.is_some() && fields.len() > 1 {
             print!("{}{} ", self.indent(), "++".paint(style).dim());
-            self.print_compact_fields(metadata, data)
+            self.println_compact_fields(metadata, data)
         } else if message.is_none() && !fields.is_empty() {
-            self.print_compact_fields(metadata, data);
+            self.println_compact_fields(metadata, data);
         }
+    }
+
+    fn println_compact_fields<F: RecordFields>(&self, metadata: &Metadata<'_>, data: F) {
+        self.print_compact_fields(metadata, data);
+        println!();
     }
 
     fn print_compact_fields<F: RecordFields>(&self, metadata: &Metadata<'_>, data: F) {
@@ -248,8 +245,6 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
                 printed = true;
             }
         });
-
-        println!();
     }
 
     fn print_fields<F>(&self, metadata: &Metadata<'_>, fields: F)
@@ -285,25 +280,44 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<S> {
         }
     }
 
-    fn on_new_span(&self, attrs: &Attributes<'_>, id: &Id, ctx: Context<'_, S>) {
-        let span = ctx.span(id).expect("new_span: span does not exist");
+    fn on_new_span(&self, attrs: &Attributes<'_>, id: &Id, ctxt: Context<'_, S>) {
         let data = Data::new(attrs);
-        match span.metadata().name() {
-            "config" => println!("configured for {}", &data["profile"]),
-            name => {
-                self.print_prefix(span.metadata());
-                print!("{name} ");
+        let span = ctxt.span(id).expect("new_span: span does not exist");
+        let style = self.style(span.metadata());
+        if &data["count"] != "0" {
+            let name = span.name();
+            let emoji = match name {
+                "config" => "🔧 ",
+                "routes" => "📬 ",
+                "catchers" => "🚧 ",
+                "fairings" => "📦 ",
+                "shield" => "🛡️ ",
+                _ => "",
+            };
+
+            self.print_prefix(span.metadata());
+            print!("{}{}", emoji.paint(style).emoji(), name.paint(style).bold());
+            if !attrs.fields().is_empty() {
+                print!(" {}", "(".paint(style));
                 self.print_compact_fields(span.metadata(), attrs);
+                print!("{}", ")".paint(style));
             }
+
+            println!();
         }
 
         span.extensions_mut().replace(data);
     }
 
     fn on_record(&self, id: &Id, values: &Record<'_>, ctxt: Context<'_, S>) {
-        let metadata = ctxt.span(id).unwrap().metadata();
-        self.print_prefix(metadata);
-        self.print_compact_fields(metadata, values);
+        let span = ctxt.span(id).expect("new_span: span does not exist");
+        match span.extensions_mut().get_mut::<Data>() {
+            Some(data) => values.record(data),
+            None => span.extensions_mut().insert(Data::new(values)),
+        }
+
+        self.print_prefix(span.metadata());
+        self.println_compact_fields(span.metadata(), values);
     }
 
     fn on_enter(&self, _: &Id, _: Context<'_, S>) {

@@ -86,10 +86,6 @@
 //! a type of `Option<S>`. If an `Outcome` is a `Forward`, the `Option` will be
 //! `None`.
 
-use std::fmt;
-
-use yansi::{Paint, Color};
-
 use crate::{route, request, response};
 use crate::data::{self, Data, FromData};
 use crate::http::Status;
@@ -101,7 +97,7 @@ use self::Outcome::*;
 ///
 /// See the [top level documentation](crate::outcome) for detailed information.
 #[must_use]
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Outcome<S, E, F> {
     /// Contains the success value.
     Success(S),
@@ -707,48 +703,6 @@ crate::export! {
                 return $crate::outcome::Outcome::Forward(::std::convert::From::from(f))
             },
         });
-    }
-}
-
-impl<S, E, F> Outcome<S, E, F> {
-    #[inline]
-    pub(crate) fn dbg_str(&self) -> &'static str {
-        match self {
-            Success(..) => "Success",
-            Error(..) => "Error",
-            Forward(..) => "Forward",
-        }
-    }
-
-    #[inline]
-    fn color(&self) -> Color {
-        match self {
-            Success(..) => Color::Green,
-            Error(..) => Color::Red,
-            Forward(..) => Color::Yellow,
-        }
-    }
-}
-
-impl route::Outcome<'_> {
-    pub(crate) fn status(&self) -> Status {
-        match self {
-            Success(r) => r.status(),
-            Error(s) => *s,
-            Forward((_, s)) => *s,
-        }
-    }
-}
-
-impl<S, E, F> fmt::Debug for Outcome<S, E, F> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Outcome::{}", self.dbg_str())
-    }
-}
-
-impl<S, E, F> fmt::Display for Outcome<S, E, F> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.dbg_str().paint(self.color()))
     }
 }
 
