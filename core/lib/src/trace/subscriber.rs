@@ -1,9 +1,10 @@
-use std::marker::PhantomData;
+use std::cell::Cell;
 use std::ops::Index;
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::fmt::{self, Debug, Display};
-// use std::time::Instant;
+use std::thread::ThreadId;
+use std::hash::{Hash, Hasher};
 
 use tracing::{Event, Level, Metadata, Subscriber};
 use tracing::level_filters::LevelFilter;
@@ -11,14 +12,13 @@ use tracing::field::{Field, Visit};
 use tracing::span::{Attributes, Id, Record};
 
 use tracing_subscriber::prelude::*;
-use tracing_subscriber::layer::Context;
-use tracing_subscriber::registry::LookupSpan;
+use tracing_subscriber::layer::{Context, Layered};
+use tracing_subscriber::registry::{LookupSpan, SpanRef};
 use tracing_subscriber::{reload, filter, Layer, Registry};
 use tracing_subscriber::field::RecordFields;
 
-use figment::Source::File as RelPath;
-use yansi::{Condition, Paint, Painted, Style};
 use tinyvec::TinyVec;
+use yansi::{Condition, Paint, Painted, Style};
 
 use crate::config::{Config, CliColors};
 use crate::util::Formatter;
@@ -35,8 +35,103 @@ impl PaintExt for Painted<&'static str> {
     }
 }
 
+#[derive(Default)]
+pub struct IdentHasher(u128);
+
+impl Hasher for IdentHasher {
+    fn finish(&self) -> u64 {
+        self.0 as u64
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        for &byte in bytes {
+            self.0 = (self.0 << 8) | (byte as u128);
+        }
+    }
+
+    fn write_u64(&mut self, i: u64) {
+        self.0 = (self.0 << 64) | (i as u128);
+    }
+
+    fn write_u128(&mut self, i: u128) {
+        self.0 = i;
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct RequestId {
+    thread: ThreadId,
+    span: Id,
+}
+
+thread_local! {
+    pub static CURRENT_REQUEST_ID: Cell<Option<u128>> = Cell::new(None);
+}
+
+impl RequestId {
+    fn new(span: &Id) -> Self {
+        thread_local! {
+            pub static THREAD_ID: Cell<Option<ThreadId>> = Cell::new(None);
+        }
+
+        RequestId {
+            span: span.clone(),
+            thread: THREAD_ID.get().unwrap_or_else(|| {
+                let id = std::thread::current().id();
+                THREAD_ID.set(Some(id));
+                id
+            }),
+        }
+    }
+
+    fn of<R: for<'a> LookupSpan<'a>>(span: &SpanRef<'_, R>) -> Option<u128> {
+        span.extensions().get::<Self>().map(|id| id.as_u128())
+    }
+
+    fn current() -> Option<u128> {
+        CURRENT_REQUEST_ID.get()
+    }
+
+    fn layer() -> RequestIdLayer {
+        RequestIdLayer
+    }
+
+    fn as_u128(&self) -> u128 {
+        let mut hasher = IdentHasher::default();
+        self.hash(&mut hasher);
+        hasher.0
+    }
+}
+
+struct RequestIdLayer;
+
+impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RequestIdLayer {
+    fn on_new_span(&self, _: &Attributes<'_>, id: &Id, ctxt: Context<'_, S>) {
+        let span = ctxt.span(id).expect("new_span: span does not exist");
+        if span.name() == "request" {
+            span.extensions_mut().replace(RequestId::new(id));
+        }
+    }
+
+    fn on_enter(&self, id: &Id, ctxt: Context<'_, S>) {
+        let span = ctxt.span(id).expect("enter: span does not exist");
+        if span.name() == "request" {
+            CURRENT_REQUEST_ID.set(RequestId::of(&span));
+        }
+    }
+
+    fn on_exit(&self, id: &Id, ctxt: Context<'_, S>) {
+        let span = ctxt.span(id).expect("enter: span does not exist");
+        if span.name() == "request" {
+            CURRENT_REQUEST_ID.set(None);
+        }
+    }
+}
+
 pub(crate) fn init(config: Option<&Config>) {
-    static HANDLE: OnceLock<reload::Handle<RocketFmt<Registry>, Registry>> = OnceLock::new();
+    type RocketSubscriber = Layered<RequestIdLayer, Registry>;
+
+    static HANDLE: OnceLock<reload::Handle<RocketFmt, RocketSubscriber>> = OnceLock::new();
 
     // Do nothing if there's no config and we've already initialized.
     if config.is_none() && HANDLE.get().is_some() {
@@ -47,6 +142,7 @@ pub(crate) fn init(config: Option<&Config>) {
     let log_level = config.map(|c| c.log_level).unwrap_or(Some(Level::INFO));
     let (layer, reload_handle) = reload::Layer::new(RocketFmt::new(cli_colors, log_level));
     let result = tracing_subscriber::registry()
+        .with(RequestId::layer())
         .with(layer)
         .try_init();
 
@@ -99,11 +195,10 @@ impl Visit for Data {
 }
 
 #[derive(Default)]
-struct RocketFmt<S> {
+struct RocketFmt {
     depth: AtomicU8,
     filter: filter::Targets,
     default_style: Style,
-    _subscriber: PhantomData<fn() -> S>
 }
 
 struct DisplayVisit<F>(F);
@@ -128,13 +223,13 @@ impl<T: RecordFields> DisplayFields for T {
     }
 }
 
-impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
+impl RocketFmt {
     fn new(cli_colors: CliColors, level: impl Into<LevelFilter>) -> Self {
         let mut this = Self {
             depth: AtomicU8::new(0),
             filter: filter::Targets::new(),
             default_style: Style::new(),
-            _subscriber: PhantomData,
+            // _subscriber: PhantomData,
         };
 
         this.set(cli_colors, level.into());
@@ -183,17 +278,12 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
         match *meta.level() {
             Level::WARN => print!("{i}{m}{} ", "warning:".paint(s).bold()),
             Level::ERROR => print!("{i}{m}{} ", "error:".paint(s).bold()),
-            Level::DEBUG => print!("{i}{m}[{} {}] ", "debug".paint(s).bold(), meta.target()),
-            Level::TRACE => match (meta.file(), meta.line()) {
-                (Some(file), Some(line)) => print!(
-                    "{i}{m}[{level} {target} {path}:{line}] ",
-                    level = "trace".paint(s).bold(),
-                    target = meta.target().paint(s).dim(),
-                    path = RelPath(file.into()).underline(),
-                ),
-                _ => print!("{i}{m}[{} {}] ", "trace".paint(s).bold(), meta.target())
-            }
-            _ => print!("{i}{m}"),
+            Level::INFO => print!("{i}{m}"),
+            level => print!("{i}{m}[{} {}] ", level.paint(s).bold(), meta.target()),
+        }
+
+        if let Some(id) = RequestId::current() {
+            print!("[{id:x}] ");
         }
     }
 
@@ -260,7 +350,7 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> RocketFmt<S> {
     }
 }
 
-impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<S> {
+impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt {
     fn enabled(&self, metadata: &Metadata<'_>, _: Context<'_, S>) -> bool {
         self.filter.would_enable(metadata.target(), metadata.level())
     }
@@ -292,11 +382,16 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<S> {
                 "catchers" => "🚧 ",
                 "fairings" => "📦 ",
                 "shield" => "🛡️ ",
+                "request" => "● ",
                 _ => "",
             };
 
             self.print_prefix(span.metadata());
             print!("{}{}", emoji.paint(style).emoji(), name.paint(style).bold());
+            if let Some(id) = RequestId::of(&span) {
+                print!(" [{id:x}]");
+            }
+
             if !attrs.fields().is_empty() {
                 print!(" {}", "(".paint(style));
                 self.print_compact_fields(span.metadata(), attrs);
