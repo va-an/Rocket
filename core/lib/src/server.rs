@@ -23,7 +23,6 @@ type Result<T, E = crate::Error> = std::result::Result<T, E>;
 
 impl Rocket<Orbit> {
     #[tracing::instrument("request", skip_all, fields(
-        timestamp = time::OffsetDateTime::now_utc().unix_timestamp_nanos(),
         method = %parts.method,
         uri = %parts.uri,
         autohandled

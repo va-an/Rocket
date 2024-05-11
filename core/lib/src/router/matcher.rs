@@ -173,6 +173,7 @@ fn paths_match(route: &Route, req: &Request<'_>) -> bool {
 fn queries_match(route: &Route, req: &Request<'_>) -> bool {
     trace!(
         route.query = route.uri.query().map(display),
+        route.query.color = route.uri.metadata.query_color.map(debug),
         request.query = req.uri().query().map(display),
     );
 
@@ -180,17 +181,15 @@ fn queries_match(route: &Route, req: &Request<'_>) -> bool {
         return true;
     }
 
-    let route_query_fields = route.uri.metadata.static_query_fields.iter()
-        .map(|(k, v)| (k.as_str(), v.as_str()));
-
-    for route_seg in route_query_fields {
+    let route_query_fields = route.uri.metadata.static_query_fields.iter();
+    for (key, val) in route_query_fields {
         if let Some(query) = req.uri().query() {
-            if !query.segments().any(|req_seg| req_seg == route_seg) {
-                trace_!("request {} missing static query {:?}", req, route_seg);
+            if !query.segments().any(|req_seg| req_seg == (key, val)) {
+                debug!(key, val, request.query = %query, "missing static query");
                 return false;
             }
         } else {
-            trace_!("query-less request {} missing static query {:?}", req, route_seg);
+            debug!(key, val, "missing static query (queryless request)");
             return false;
         }
     }
