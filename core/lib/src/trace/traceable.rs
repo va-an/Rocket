@@ -137,6 +137,10 @@ impl Traceable for Route {
             uri.base = %self.uri.base(),
             uri.unmounted = %self.uri.unmounted(),
             format = self.format.as_ref().map(display),
+        }
+
+        event! { Level::DEBUG, "route",
+            route = self.name.as_ref().map(|n| &**n),
             sentinels = %Formatter(|f|{
                 f.debug_set()
                     .entries(self.sentinels.iter().filter(|s| s.specialized).map(|s| s.type_name))
