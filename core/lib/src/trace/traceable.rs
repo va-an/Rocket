@@ -141,7 +141,7 @@ impl Traceable for Route {
 
         event! { Level::DEBUG, "route",
             route = self.name.as_ref().map(|n| &**n),
-            sentinels = %Formatter(|f|{
+            sentinels = %Formatter(|f| {
                 f.debug_set()
                     .entries(self.sentinels.iter().filter(|s| s.specialized).map(|s| s.type_name))
                     .finish()
@@ -154,7 +154,10 @@ impl Traceable for Catcher {
     fn trace(&self, level: Level) {
         event! { level, "catcher",
             name = self.name.as_ref().map(|n| &**n),
-            code = self.code,
+            status = %Formatter(|f| match self.code {
+                Some(code) => write!(f, "{}", code),
+                None => write!(f, "default"),
+            }),
             rank = self.rank,
             uri.base = %self.base(),
         }

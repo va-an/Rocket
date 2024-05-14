@@ -41,7 +41,7 @@ impl RocketFmt<Pretty> {
         #[cfg(not(windows))] { emoji.paint(self.style).mask() }
     }
 
-    fn pretty_prefix<'a>(&self, meta: &'a Metadata<'_>) -> impl fmt::Display + 'a {
+    fn prefix<'a>(&self, meta: &'a Metadata<'_>) -> impl fmt::Display + 'a {
         let (i, m, s) = (self.indent(), self.marker(), self.style(meta));
         Formatter(move |f| match *meta.level() {
             Level::WARN => write!(f, "{i}{m}{} ", "warning:".paint(s).bold()),
@@ -52,7 +52,7 @@ impl RocketFmt<Pretty> {
     }
 
     fn print_pretty<F: RecordFields>(&self, m: &Metadata<'_>, data: F) {
-        let prefix = self.pretty_prefix(m);
+        let prefix = self.prefix(m);
         let cont_prefix = Formatter(|f| {
             let style = self.style(m);
             write!(f, "{}{} ", self.indent(), "++".paint(style).dim())
@@ -65,7 +65,7 @@ impl RocketFmt<Pretty> {
         where F: RecordFields
     {
         let style = self.style(metadata);
-        let prefix = self.pretty_prefix(metadata);
+        let prefix = self.prefix(metadata);
         fields.record_display(|key: &Field, value: &dyn fmt::Display| {
             if key.name() != "message" {
                 println!("{prefix}{}: {}", key.paint(style), value.paint(style).primary());
@@ -85,7 +85,7 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<Pretty> {
         match meta.name() {
             "config" => self.print_fields(meta, event),
             "liftoff" => {
-                let prefix = self.pretty_prefix(meta);
+                let prefix = self.prefix(meta);
                 println!("{prefix}{}{} {}", self.emoji("🚀 "),
                     "Rocket has launched from".paint(style).primary().bold(),
                     &data["endpoint"].paint(style).primary().bold().underline());
@@ -111,7 +111,7 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<Pretty> {
 
             let meta = span.metadata();
             let style = self.style(meta);
-            let prefix = self.pretty_prefix(meta);
+            let prefix = self.prefix(meta);
             let emoji = self.emoji(icon);
             let name = name.paint(style).bold();
 
@@ -133,7 +133,7 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<Pretty> {
         }
 
         let meta = span.metadata();
-        println!("{}{}", self.pretty_prefix(meta), self.compact_fields(meta, values));
+        println!("{}{}", self.prefix(meta), self.compact_fields(meta, values));
     }
 
     fn on_enter(&self, _: &Id, _: Context<'_, S>) {

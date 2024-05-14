@@ -1,8 +1,8 @@
 use futures::future::{FutureExt, Future};
 
+use crate::{route, catcher, Rocket, Orbit, Request, Response, Data};
 use crate::trace::traceable::Traceable;
 use crate::util::Formatter;
-use crate::{route, Rocket, Orbit, Request, Response, Data};
 use crate::data::IoHandler;
 use crate::http::{Method, Status, Header};
 use crate::outcome::Outcome;
@@ -236,23 +236,22 @@ impl Rocket<Orbit> {
         // We may wish to relax this in the future.
         req.cookies().reset_delta();
 
-        // Dispatch to the `status` catcher.
-        if let Ok(r) = self.invoke_catcher(status, req).await {
-            return r;
-        }
-
-        // If it fails and it's not a 500, try the 500 catcher.
-        if status != Status::InternalServerError {
-            error_!("Catcher failed. Attempting 500 error catcher.");
-            status = Status::InternalServerError;
-            if let Ok(r) = self.invoke_catcher(status, req).await {
-                return r;
+        loop {
+            // Dispatch to the `status` catcher.
+            match self.invoke_catcher(status, req).await {
+                Ok(r) => return r,
+                // If the catcher failed, try `500` catcher, unless this is it.
+                Err(e) if status.code != 500 => {
+                    warn!(status = e.map(|r| r.code), "catcher failed: trying 500 catcher");
+                    status = Status::InternalServerError;
+                }
+                // The 500 catcher failed. There's no recourse. Use default.
+                Err(e) => {
+                    error!(status = e.map(|r| r.code), "500 catcher failed");
+                    return catcher::default_handler(Status::InternalServerError, req);
+                }
             }
         }
-
-        // If it failed again or if it was already a 500, use Rocket's default.
-        error_!("{} catcher failed. Using Rocket default 500.", status.code);
-        crate::catcher::default_handler(Status::InternalServerError, req)
     }
 
     /// Invokes the handler with `req` for catcher with status `status`.
@@ -276,9 +275,9 @@ impl Rocket<Orbit> {
                 .map(|result| result.map_err(Some))
                 .unwrap_or_else(|| Err(None))
         } else {
-            info!("no user catcher found: using Rocket default");
-            Ok(crate::catcher::default_handler(status, req))
+            info!(name: "catcher", name = "rocket::default", code = status.code,
+                "no registered catcher: using Rocket default");
+            Ok(catcher::default_handler(status, req))
         }
     }
-
 }
