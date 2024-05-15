@@ -4,8 +4,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::any::Any;
 use std::future::Future;
+use std::panic::Location;
 
-use yansi::Paint;
 use either::Either;
 use figment::{Figment, Provider};
 use futures::TryFutureExt;
@@ -21,7 +21,6 @@ use crate::phase::{Stateful, StateRef, State};
 use crate::http::uri::Origin;
 use crate::http::ext::IntoOwned;
 use crate::error::{Error, ErrorKind};
-// use crate::log::PaintExt;
 
 /// The application server itself.
 ///
@@ -248,20 +247,18 @@ impl Rocket<Build> {
               B::Error: fmt::Display,
               M: Fn(&Origin<'a>, T) -> T,
               F: Fn(&mut Self, T),
-              T: Clone + fmt::Display,
+              T: Clone + Traceable,
     {
         let mut base = match base.clone().try_into() {
             Ok(origin) => origin.into_owned(),
             Err(e) => {
-                error!("invalid {} base: {}", kind, Paint::white(&base));
-                error_!("{}", e);
-                info_!("{} {}", "in".primary(), std::panic::Location::caller());
+                error!(%base, location = %Location::caller(), "invalid {kind} base uri: {e}");
                 panic!("aborting due to {} base error", kind);
             }
         };
 
         if base.query().is_some() {
-            warn!("query in {} base '{}' is ignored", kind, Paint::white(&base));
+            warn!(%base, location = %Location::caller(), "query in {kind} base is ignored");
             base.clear_query();
         }
 

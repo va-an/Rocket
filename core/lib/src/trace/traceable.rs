@@ -142,7 +142,7 @@ impl Traceable for Route {
             format = self.format.as_ref().map(display),
         }
 
-        event! { Level::DEBUG, "route",
+        event! { Level::DEBUG, "sentinels",
             route = self.name.as_ref().map(|n| &**n),
             sentinels = %Formatter(|f| {
                 f.debug_set()
