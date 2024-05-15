@@ -256,7 +256,7 @@ impl Traceable for Error {
 impl Traceable for Sentry {
     fn trace(&self, level: Level) {
         let (file, line, column) = self.location;
-        event!(level, "sentry", type_name = self.type_name, file, line, column);
+        event!(level, "sentry", "type" = self.type_name, file, line, column);
     }
 }
 
@@ -325,7 +325,7 @@ impl Traceable for ErrorKind {
                 span.in_scope(|| fairings.iter().trace_all(level));
             },
             SentinelAborts(sentries) => {
-                let span = span!(level, "sentries", "sentry abort");
+                let span = span!(level, "sentries", "sentry launch abort");
                 span.in_scope(|| sentries.iter().trace_all(level));
             }
             InsecureSecretKey(profile) => event!(level, "insecure_key", %profile,

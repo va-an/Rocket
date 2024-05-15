@@ -36,7 +36,8 @@ macro_rules! declare_span_macro {
     );
 }
 
-declare_span_macro!(error_span ERROR, info_span INFO, trace_span TRACE, debug_span DEBUG);
+declare_span_macro!(error_span ERROR, warn_span WARN,
+    info_span INFO, trace_span TRACE, debug_span DEBUG);
 
 macro_rules! span {
     ($level:expr, $($args:tt)*) => {{

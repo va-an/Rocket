@@ -221,15 +221,10 @@ impl<'r, K: 'static, C: Poolable> FromRequest<'r> for Connection<K, C> {
 
 impl<K: 'static, C: Poolable> Sentinel for Connection<K, C> {
     fn abort(rocket: &Rocket<Ignite>) -> bool {
-        use rocket::yansi::Paint;
-
         if rocket.state::<ConnectionPool<K, C>>().is_none() {
-            let conn = std::any::type_name::<K>().primary().bold();
-            error!("requesting `{}` DB connection without attaching `{}{}`.",
-                conn, conn.linger(), "::fairing()".resetting());
-
-            info_!("Attach `{}{}` to use database connection pooling.",
-                conn.linger(), "::fairing()".resetting());
+            let conn = std::any::type_name::<K>();
+            error!("`{conn}::fairing()` is not attached\n\
+                the fairing must be attached to use `{conn} in routes.");
 
             return true;
         }
