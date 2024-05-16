@@ -757,9 +757,11 @@ impl Rocket<Orbit> {
         rocket.fairings.handle_liftoff(rocket).await;
 
         if !crate::running_within_rocket_async_rt().await {
-            warn!("Rocket is executing inside of a custom runtime.");
-            info_!("Rocket's runtime is enabled via `#[rocket::main]` or `#[launch]`.");
-            info_!("Forced shutdown is disabled. Runtime settings may be suboptimal.");
+            warn!(
+                "Rocket is executing inside of a custom runtime.\n\
+                Rocket's runtime is enabled via `#[rocket::main]` or `#[launch]`\n\
+                Forced shutdown is disabled. Runtime settings may be suboptimal."
+            );
         }
 
         tracing::info!(name: "liftoff", endpoint = %rocket.endpoints[0]);

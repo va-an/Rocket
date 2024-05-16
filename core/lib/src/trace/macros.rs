@@ -11,14 +11,7 @@ macro_rules! declare_macro {
     );
 }
 
-declare_macro!(
-    // launch_meta INFO, launch_meta_ INFO,
-    error error, error_ error,
-    info info, info_ info,
-    trace trace, trace_ trace,
-    debug debug, debug_ debug,
-    warn warn, warn_ warn,
-);
+declare_macro!(error error, info info, trace trace, debug debug, warn warn);
 
 macro_rules! declare_span_macro {
     ($($name:ident $level:ident),* $(,)?) => (

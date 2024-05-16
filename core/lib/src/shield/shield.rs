@@ -226,8 +226,10 @@ impl Fairing for Shield {
         // the header is not already in the response.
         for header in self.policies.values() {
             if response.headers().contains(header.name()) {
-                warn!("Shield: response contains a '{}' header.", header.name());
-                warn_!("Refusing to overwrite existing header.");
+                warn_span!("shield refusing to overwrite existing response header" => {
+                    header.trace_warn();
+                });
+
                 continue
             }
 

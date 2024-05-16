@@ -42,14 +42,14 @@ impl Engine for Environment<'static> {
         Some(env)
     }
 
-    fn render<C: Serialize>(&self, name: &str, context: C) -> Option<String> {
-        let Ok(template) = self.get_template(name) else {
-            error_!("Minijinja template '{name}' was not found.");
+    fn render<C: Serialize>(&self, template: &str, context: C) -> Option<String> {
+        let Ok(template) = self.get_template(template) else {
+            error!(template, "Minijinja template not found");
             return None;
         };
 
         template.render(context)
-            .map_err(|e| error_!("Minijinja: {}", e))
+            .map_err(|e| error!("Minijinja render error: {}", e))
             .ok()
     }
 }

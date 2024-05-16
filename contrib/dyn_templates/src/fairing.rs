@@ -48,7 +48,7 @@ impl Fairing for TemplateFairing {
         if let Some(ctxt) = Context::initialize(&path, &self.callback) {
             Ok(rocket.manage(ContextManager::new(ctxt)))
         } else {
-            error_!("Template initialization failed. Aborting launch.");
+            error!("Template initialization failed. Aborting launch.");
             Err(rocket)
         }
     }
