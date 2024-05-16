@@ -255,8 +255,11 @@ impl Traceable for Error {
 
 impl Traceable for Sentry {
     fn trace(&self, level: Level) {
-        let (file, line, column) = self.location;
-        event!(level, "sentry", "type" = self.type_name, file, line, column);
+        let (file, line, col) = self.location;
+        event!(level, "sentry",
+            type_name = self.type_name,
+            location = %Formatter(|f| write!(f, "{file}:{line}:{col}"))
+        );
     }
 }
 
