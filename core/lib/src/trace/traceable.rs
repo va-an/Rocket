@@ -47,10 +47,15 @@ impl Trace for Figment {
     fn trace(&self, level: Level) {
         for param in Config::PARAMETERS {
             if let Some(source) = self.find_metadata(param) {
+                if param.contains("secret") {
+                    continue;
+                }
+
                 event! { level, "figment",
                     param,
                     %source.name,
                     source.source = source.source.as_ref().map(display),
+                    value = self.find_value(param).ok().map(debug),
                 }
             }
         }

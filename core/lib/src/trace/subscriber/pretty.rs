@@ -79,7 +79,7 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<Pretty> {
             "liftoff" => {
                 let prefix = self.prefix(meta);
                 println!("{prefix}{}{} {}", self.emoji("🚀 "),
-                    "Rocket has launched from".paint(style).primary().bold(),
+                    "Rocket has launched on".paint(style).primary().bold(),
                     &data["endpoint"].paint(style).primary().bold().underline());
             },
             "route" => println!("{}", Formatter(|f| {

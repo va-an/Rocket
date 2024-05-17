@@ -185,16 +185,9 @@ impl Rocket<Build> {
     /// ```
     #[must_use]
     pub fn custom<T: Provider>(provider: T) -> Self {
-        // We initialize the logger here so that logging from fairings and so on
-        // are visible; we use the final config to set a max log-level in ignite
-        crate::trace::init(None);
-
-        let rocket: Rocket<Build> = Rocket(Building {
-            figment: Figment::from(provider),
-            ..Default::default()
-        });
-
-        rocket.attach(Shield::default())
+        Rocket::<Build>(Building::default())
+            .reconfigure(provider)
+            .attach(Shield::default())
     }
 
     /// Overrides the current configuration provider with `provider`.
@@ -237,7 +230,12 @@ impl Rocket<Build> {
     /// ```
     #[must_use]
     pub fn reconfigure<T: Provider>(mut self, provider: T) -> Self {
+        // We initialize the logger here so that logging from fairings and so on
+        // are visible; we use the final config to set a max log-level in ignite
         self.figment = Figment::from(provider);
+        crate::trace::init(Config::try_from(&self.figment).ok().as_ref());
+        trace_span!("reconfigure" => self.figment().trace_trace());
+
         self
     }
 
