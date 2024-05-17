@@ -1,10 +1,9 @@
+use std::fmt;
+use std::time::Instant;
 use std::num::NonZeroU64;
 
-use std::fmt;
-use std::sync::OnceLock;
-use std::time::Instant;
-
 use time::OffsetDateTime;
+use tracing::level_filters::LevelFilter;
 use tracing::{Event, Level, Metadata, Subscriber};
 use tracing::span::{Attributes, Id, Record};
 
@@ -15,7 +14,7 @@ use tracing_subscriber::field::RecordFields;
 use yansi::{Paint, Painted};
 
 use crate::util::Formatter;
-use crate::trace::subscriber::{Data, Handle, RocketFmt};
+use crate::trace::subscriber::{Data, RocketFmt};
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Compact {
@@ -39,12 +38,6 @@ impl RequestData {
 }
 
 impl RocketFmt<Compact> {
-    pub fn init(config: Option<&crate::Config>) {
-        static HANDLE: OnceLock<Handle<Compact>> = OnceLock::new();
-
-        Self::init_with(config, &HANDLE);
-    }
-
     fn request_span_id(&self) -> Option<Id> {
         self.state().request.map(Id::from_non_zero_u64)
     }
@@ -69,8 +62,9 @@ impl RocketFmt<Compact> {
             .then_some(meta.target())
             .unwrap_or(meta.name());
 
+        let pad = self.level.map_or(0, |lvl| lvl.as_str().len());
         let timestamp = self.timestamp_for(OffsetDateTime::now_utc());
-        Formatter(move |f| write!(f, "{} {:>5} {} ",
+        Formatter(move |f| write!(f, "{} {:>pad$} {} ",
             timestamp.paint(style).primary().dim(),
             meta.level().paint(style),
             name.paint(style).primary()))

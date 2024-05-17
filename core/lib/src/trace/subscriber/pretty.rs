@@ -20,12 +20,6 @@ pub struct Pretty {
 }
 
 impl RocketFmt<Pretty> {
-    pub fn init(config: Option<&crate::Config>) {
-        static HANDLE: OnceLock<Handle<Pretty>> = OnceLock::new();
-
-        Self::init_with(config, &HANDLE);
-    }
-
     fn indent(&self) -> &'static str {
         static INDENT: &[&str] = &["", "   ", "      "];
         INDENT.get(self.state().depth as usize).copied().unwrap_or("         ")

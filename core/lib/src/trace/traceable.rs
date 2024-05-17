@@ -74,6 +74,7 @@ impl Traceable for Config {
         event! { level, "config",
             http2 = cfg!(feature = "http2"),
             log_level = self.log_level.map(|l| l.as_str()),
+            log_format = ?self.log_format,
             cli_colors = %self.cli_colors,
             workers = self.workers,
             max_blocking = self.max_blocking,

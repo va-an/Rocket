@@ -2,9 +2,8 @@ use std::fmt;
 use std::cell::Cell;
 use std::sync::OnceLock;
 
-use tracing::{Level, Metadata};
 use tracing::field::Field;
-
+use tracing::{Level, Metadata};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::layer::Layered;
 use tracing_subscriber::{reload, filter, Layer, Registry};
@@ -18,10 +17,10 @@ use crate::trace::subscriber::{RecordDisplay, RequestId, RequestIdLayer};
 use crate::util::Formatter;
 
 mod private {
-    pub trait FmtKind: Default + Copy + Send + Sync + 'static { }
+    pub trait FmtKind: Send + Sync + 'static { }
 
-    impl FmtKind for crate::trace::subscriber::Pretty {}
-    impl FmtKind for crate::trace::subscriber::Compact {}
+    impl FmtKind for crate::trace::subscriber::Pretty { }
+    impl FmtKind for crate::trace::subscriber::Compact { }
 }
 
 #[derive(Default)]
@@ -34,7 +33,7 @@ pub struct RocketFmt<K: private::FmtKind> {
 
 pub type Handle<K> = reload::Handle<RocketFmt<K>, Layered<RequestIdLayer, Registry>>;
 
-impl<K: private::FmtKind> RocketFmt<K> {
+impl<K: private::FmtKind + Default + Copy> RocketFmt<K> {
     pub(crate) fn state(&self) -> K {
         self.state.get_or_default().get()
     }
@@ -45,33 +44,9 @@ impl<K: private::FmtKind> RocketFmt<K> {
         update(&mut old);
         cell.set(old);
     }
+}
 
-    pub(crate) fn init_with(config: Option<&Config>, handle: &OnceLock<Handle<K>>)
-        where Self: Layer<Layered<RequestIdLayer, Registry>>
-    {
-        // Do nothing if there's no config and we've already initialized.
-        if config.is_none() && handle.get().is_some() {
-            return;
-        }
-
-        let workers = config.map(|c| c.workers).unwrap_or(num_cpus::get());
-        let cli_colors = config.map(|c| c.cli_colors).unwrap_or(CliColors::Auto);
-        let log_level = config.map(|c| c.log_level).unwrap_or(Some(Level::INFO));
-
-        let formatter = RocketFmt::new(workers, cli_colors, log_level);
-        let (layer, reload_handle) = reload::Layer::new(formatter);
-        let result = tracing_subscriber::registry()
-            .with(RequestId::layer())
-            .with(layer)
-            .try_init();
-
-        if result.is_ok() {
-            assert!(handle.set(reload_handle).is_ok());
-        } if let Some(handle) = handle.get() {
-            assert!(handle.modify(|layer| layer.reset(cli_colors, log_level)).is_ok());
-        }
-    }
-
+impl<K: private::FmtKind> RocketFmt<K> {
     pub fn new(workers: usize, cli_colors: CliColors, level: Option<Level>) -> Self {
         Self {
             state: ThreadLocal::with_capacity(workers),
