@@ -34,6 +34,7 @@ impl Rocket<Orbit> {
         upgrade: Option<hyper::upgrade::OnUpgrade>,
         connection: ConnectionMeta,
     ) -> Result<hyper::Response<ReaderStream<ErasedResponse>>, http::Error> {
+        connection.trace_debug();
         let request = ErasedRequest::new(self, parts, |rocket, parts| {
             Request::from_hyp(rocket, parts, connection).unwrap_or_else(|e| e)
         });

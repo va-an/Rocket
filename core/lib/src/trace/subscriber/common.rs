@@ -1,19 +1,16 @@
 use std::fmt;
 use std::cell::Cell;
-use std::sync::OnceLock;
 
 use tracing::field::Field;
 use tracing::{Level, Metadata};
-use tracing_subscriber::prelude::*;
-use tracing_subscriber::layer::Layered;
-use tracing_subscriber::{reload, filter, Layer, Registry};
+use tracing_subscriber::filter;
 use tracing_subscriber::field::RecordFields;
 
 use thread_local::ThreadLocal;
 use yansi::{Condition, Paint, Style};
 
-use crate::config::{Config, CliColors};
-use crate::trace::subscriber::{RecordDisplay, RequestId, RequestIdLayer};
+use crate::config::CliColors;
+use crate::trace::subscriber::RecordDisplay;
 use crate::util::Formatter;
 
 mod private {
@@ -30,8 +27,6 @@ pub struct RocketFmt<K: private::FmtKind> {
     pub(crate) filter: filter::Targets,
     pub(crate) style: Style,
 }
-
-pub type Handle<K> = reload::Handle<RocketFmt<K>, Layered<RequestIdLayer, Registry>>;
 
 impl<K: private::FmtKind + Default + Copy> RocketFmt<K> {
     pub(crate) fn state(&self) -> K {

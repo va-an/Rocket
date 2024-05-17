@@ -1,5 +1,6 @@
 use std::error::Error as StdError;
 
+use crate::request::ConnectionMeta;
 use crate::sentinel::Sentry;
 use crate::util::Formatter;
 use crate::{route, Catcher, Config, Error, Request, Response, Route};
@@ -267,6 +268,15 @@ impl Traceable for Sentry {
 impl Traceable for Request<'_> {
     fn trace(&self, level: Level) {
         event!(level, "request", method = %self.method(), uri = %self.uri())
+    }
+}
+
+impl Traceable for ConnectionMeta {
+    fn trace(&self, level: Level) {
+        event!(level, "connection",
+            endpoint = self.peer_endpoint.as_ref().map(display),
+            certs = self.peer_certs.is_some(),
+        )
     }
 }
 

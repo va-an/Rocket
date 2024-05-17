@@ -1,18 +1,16 @@
 use std::fmt;
-use std::sync::OnceLock;
 
+use tracing::field::Field;
 use tracing::{Event, Level, Metadata, Subscriber};
 use tracing::span::{Attributes, Id, Record};
-use tracing::field::Field;
-
 use tracing_subscriber::layer::{Layer, Context};
 use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::field::RecordFields;
 
 use yansi::{Paint, Painted};
 
-use crate::trace::subscriber::{Data, RecordDisplay, Handle, RocketFmt};
 use crate::util::Formatter;
+use crate::trace::subscriber::{Data, RecordDisplay, RocketFmt};
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Pretty {

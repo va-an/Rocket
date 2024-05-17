@@ -11,5 +11,4 @@ pub use common::RocketFmt;
 pub use request_id::{RequestId, RequestIdLayer};
 pub use dynamic::RocketDynFmt;
 
-pub(crate) use common::Handle;
 pub(crate) use visit::{RecordDisplay, Data};
