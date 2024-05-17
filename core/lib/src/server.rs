@@ -17,7 +17,7 @@ use crate::error::log_server_error;
 use crate::data::{IoStream, RawStream};
 use crate::util::{spawn_inspect, FutureExt, ReaderStream};
 use crate::http::Status;
-use crate::trace::{Traceable, TraceableCollection};
+use crate::trace::{Trace, TraceAll};
 
 type Result<T, E = crate::Error> = std::result::Result<T, E>;
 

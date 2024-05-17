@@ -9,7 +9,7 @@ pub mod subscriber;
 pub(crate) mod level;
 
 #[doc(inline)]
-pub use traceable::{Traceable, TraceableCollection};
+pub use traceable::{Trace, TraceAll};
 
 #[doc(inline)]
 pub use macros::*;
