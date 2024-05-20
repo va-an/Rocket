@@ -1,19 +1,3 @@
-macro_rules! declare_macro {
-    ($($name:ident $level:ident),* $(,)?) => (
-        $(declare_macro!([$] $name $level);)*
-    );
-
-    ([$d:tt] $name:ident $level:ident) => (
-        #[doc(hidden)]
-        #[macro_export]
-        macro_rules! $name {
-            ($d ($t:tt)*) => ($crate::tracing::$level!($d ($t)*));
-        }
-
-        // pub use $name as $name;
-    );
-}
-
 macro_rules! declare_span_macro {
     ($($name:ident $level:ident),* $(,)?) => (
         $(declare_span_macro!([$] $name $level);)*
@@ -34,6 +18,41 @@ macro_rules! declare_span_macro {
     );
 }
 
+// FIXME: Maybe we should just use the `tracing` macros directly. Or at least
+// make these compatible with the syntax of the `tracing` macros.
+declare_span_macro!(
+    error_span ERROR,
+    warn_span WARN,
+    info_span INFO,
+    trace_span TRACE,
+    debug_span DEBUG,
+);
+
+macro_rules! declare_macro {
+    ($($name:ident $level:ident),* $(,)?) => (
+        $(declare_macro!([$] $name $level);)*
+    );
+
+    ([$d:tt] $name:ident $level:ident) => (
+        #[doc(hidden)]
+        #[macro_export]
+        macro_rules! $name {
+            ($d ($t:tt)*) => ($crate::tracing::$level!($d ($t)*));
+        }
+
+        // pub use $name as $name;
+    );
+}
+
+// FIXME: These are confusing. We should probably just use the `tracing` macros.
+declare_macro!(
+    error error,
+    info info,
+    trace trace,
+    debug debug,
+    warn warn
+);
+
 macro_rules! span {
     ($level:expr, $($args:tt)*) => {{
         match $level {
@@ -51,6 +70,7 @@ macro_rules! span {
     }};
 }
 
+// FIXME: We shouldn't export this.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! event {
@@ -71,19 +91,3 @@ macro_rules! event {
 
 #[doc(inline)]
 pub use event as event;
-
-declare_macro!(
-    error error,
-    info info,
-    trace trace,
-    debug debug,
-    warn warn
-);
-
-declare_span_macro!(
-    error_span ERROR,
-    warn_span WARN,
-    info_span INFO,
-    trace_span TRACE,
-    debug_span DEBUG,
-);
