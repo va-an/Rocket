@@ -506,13 +506,13 @@ impl<'r, 'o: 'r, 't: 'o, 'e: 'o, T, E> Responder<'r, 'o> for Result<T, E>
 
 /// Responds with the wrapped `Responder` in `self`, whether it is `Left` or
 /// `Right`.
-impl<'r, 'o: 'r, 't: 'o, 'e: 'o, T, E> Responder<'r, 'o> for crate::Either<T, E>
+impl<'r, 'o: 'r, 't: 'o, 'e: 'o, T, E> Responder<'r, 'o> for either::Either<T, E>
     where T: Responder<'r, 't>, E: Responder<'r, 'e>
 {
     fn respond_to(self, req: &'r Request<'_>) -> response::Result<'o> {
         match self {
-            crate::Either::Left(r) => r.respond_to(req),
-            crate::Either::Right(r) => r.respond_to(req),
+            either::Either::Left(r) => r.respond_to(req),
+            either::Either::Right(r) => r.respond_to(req),
         }
     }
 }

@@ -156,7 +156,7 @@ pub trait Pool: Sized + Send + Sync + 'static {
 mod deadpool_postgres {
     use deadpool::{managed::{Manager, Pool, PoolError, Object, BuildError}, Runtime};
     use super::{Duration, Error, Config, Figment};
-    use rocket::Either;
+    use rocket::either::Either;
 
     pub trait DeadManager: Manager + Sized + Send + Sync + 'static {
         fn new(config: &Config) -> Result<Self, Self::Error>;

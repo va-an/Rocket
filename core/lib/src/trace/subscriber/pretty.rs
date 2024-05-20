@@ -98,7 +98,13 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<Pretty> {
                 )?;
 
                 if let Some(name) = data.get("name") {
-                    write!(f, " ({})", name.paint(style.bold().bright()))?;
+                    write!(f, " ({}", name.paint(style.bold().bright()))?;
+
+                    if let Some(location) = data.get("location") {
+                        write!(f, " {}", location.paint(style.dim()))?;
+                    }
+
+                    write!(f, ")")?;
                 }
 
                 Ok(())
@@ -113,7 +119,13 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for RocketFmt<Pretty> {
 
                 write!(f, "{}", &data["uri.base"].paint(style.primary()))?;
                 if let Some(name) = data.get("name") {
-                    write!(f, " ({})", name.paint(style.bold().bright()))?;
+                    write!(f, " ({}", name.paint(style.bold().bright()))?;
+
+                    if let Some(location) = data.get("location") {
+                        write!(f, " {}", location.paint(style.dim()))?;
+                    }
+
+                    write!(f, ")")?;
                 }
 
                 Ok(())

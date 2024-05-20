@@ -147,6 +147,9 @@ impl Trace for Route {
             uri.base = %self.uri.base(),
             uri.unmounted = %self.uri.unmounted(),
             format = self.format.as_ref().map(display),
+            location = self.location.as_ref()
+                .map(|(file, line, _)| Formatter(move |f| write!(f, "{file}:{line}")))
+                .map(display),
         }
 
         event! { Level::DEBUG, "sentinels",
@@ -170,6 +173,9 @@ impl Trace for Catcher {
             }),
             rank = self.rank,
             uri.base = %self.base(),
+            location = self.location.as_ref()
+                .map(|(file, line, _)| Formatter(move |f| write!(f, "{file}:{line}")))
+                .map(display),
         }
     }
 }
@@ -303,7 +309,7 @@ impl Trace for ErrorKind {
                     e.trace(level);
                 } else {
                     event!(level, "error::bind",
-                        ?error,
+                        reason = %error,
                         endpoint = endpoint.as_ref().map(display),
                         "binding to network interface failed"
                     )

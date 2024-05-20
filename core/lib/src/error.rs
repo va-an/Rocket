@@ -215,3 +215,59 @@ pub(crate) fn log_server_error(error: &(dyn StdError + 'static)) {
         });
     }
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! display_hack {
+    ($v:expr) => ({
+        #[allow(unused_imports)]
+        use $crate::error::display_hack_impl::{DisplayHack, DefaultDisplay as _};
+
+        #[allow(unreachable_code)]
+        DisplayHack($v).display()
+    })
+}
+
+#[doc(hidden)]
+pub use display_hack as display_hack;
+
+#[doc(hidden)]
+pub mod display_hack_impl {
+    use super::*;
+    use crate::util::Formatter;
+
+    /// The *magic*.
+    ///
+    /// This type implements a `display()` method for all types that are either
+    /// `fmt::Display` _or_ `fmt::Debug`, using the former when available. It
+    /// does so by using a "specialization" hack: it has a blanket
+    /// DefaultDisplay trait impl for all types that are `fmt::Debug` and a
+    /// "specialized" inherent impl for all types that are `fmt::Display`.
+    ///
+    /// As long as `T: Display`, the "specialized" impl is what Rust will
+    /// resolve `DisplayHack(v).display()` to when `T: fmt::Display` as it is an
+    /// inherent impl. Otherwise, Rust will fall back to the blanket impl.
+    pub struct DisplayHack<T: ?Sized>(pub T);
+
+    pub trait DefaultDisplay {
+        fn display(&self) -> impl fmt::Display;
+    }
+
+    /// Blanket implementation for `T: Debug`. This is what Rust will resolve
+    /// `DisplayHack<T>::display` to when `T: Debug`.
+    impl<T: fmt::Debug + ?Sized> DefaultDisplay for DisplayHack<T> {
+        #[inline(always)]
+        fn display(&self) -> impl fmt::Display {
+            Formatter(|f| fmt::Debug::fmt(&self.0, f))
+        }
+    }
+
+    /// "Specialized" implementation for `T: Display`. This is what Rust will
+    /// resolve `DisplayHack<T>::display` to when `T: Display`.
+    impl<T: fmt::Display + fmt::Debug + ?Sized> DisplayHack<T> {
+        #[inline(always)]
+        pub fn display(&self) -> impl fmt::Display + '_ {
+            Formatter(|f| fmt::Display::fmt(&self.0, f))
+        }
+    }
+}

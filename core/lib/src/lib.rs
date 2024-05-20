@@ -123,6 +123,7 @@ pub use tokio;
 pub use figment;
 pub use time;
 pub use tracing;
+pub use either;
 
 #[macro_use]
 pub mod trace;
@@ -163,8 +164,6 @@ mod state;
 mod router;
 mod phase;
 mod erased;
-
-#[doc(hidden)] pub use either::Either;
 
 #[doc(inline)] pub use rocket_codegen::*;
 
