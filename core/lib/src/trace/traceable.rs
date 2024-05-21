@@ -216,17 +216,14 @@ impl Trace for figment::error::Kind {
 impl Trace for figment::Error {
     fn trace(&self, _: Level) {
         for e in self.clone() {
-            let span = tracing::error_span! {
-                "config",
+            span_error!("config",
                 key = (!e.path.is_empty()).then_some(&e.path).and_then(|path| {
                     let (profile, metadata) = (e.profile.as_ref()?, e.metadata.as_ref()?);
                     Some(metadata.interpolate(profile, path))
                 }),
                 source.name = e.metadata.as_ref().map(|m| &*m.name),
-                source.source = e.metadata.as_ref().and_then(|m| m.source.as_ref()).map(display),
-            };
-
-            span.in_scope(|| e.kind.trace_error());
+                source.source = e.metadata.as_ref().and_then(|m| m.source.as_ref()).map(display)
+                => e.kind.trace_error());
         }
     }
 }

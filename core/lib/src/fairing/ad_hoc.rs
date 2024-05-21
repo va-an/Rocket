@@ -2,8 +2,8 @@ use futures::future::{Future, BoxFuture, FutureExt};
 use parking_lot::Mutex;
 
 use crate::route::RouteUri;
-use crate::{Rocket, Request, Response, Data, Build, Orbit};
 use crate::fairing::{Fairing, Kind, Info, Result};
+use crate::{Rocket, Request, Response, Data, Build, Orbit};
 
 /// A ad-hoc fairing that can be created from a function or closure.
 ///

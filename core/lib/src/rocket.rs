@@ -234,7 +234,7 @@ impl Rocket<Build> {
         // are visible; we use the final config to set a max log-level in ignite
         self.figment = Figment::from(provider);
         crate::trace::init(Config::try_from(&self.figment).ok().as_ref());
-        trace_span!("reconfigure" => self.figment().trace_trace());
+        span_trace!("reconfigure" => self.figment().trace_trace());
 
         self
     }
@@ -564,14 +564,14 @@ impl Rocket<Build> {
         // Log everything we know: config, routes, catchers, fairings.
         // TODO: Store/print managed state type names?
         let fairings = self.fairings.unique_set();
-        info_span!("config" [profile = %self.figment().profile()] => {
+        span_info!("config", profile = %self.figment().profile() => {
             config.trace_info();
             self.figment().trace_debug();
         });
 
-        info_span!("routes" [count = self.routes.len()] => self.routes().trace_all_info());
-        info_span!("catchers" [count = self.catchers.len()] => self.catchers().trace_all_info());
-        info_span!("fairings" [count = fairings.len()] => fairings.trace_all_info());
+        span_info!("routes", count = self.routes.len() => self.routes().trace_all_info());
+        span_info!("catchers", count = self.catchers.len() => self.catchers().trace_all_info());
+        span_info!("fairings", count = fairings.len() => fairings.trace_all_info());
 
         // Ignite the rocket.
         let rocket: Rocket<Ignite> = Rocket(Igniting {

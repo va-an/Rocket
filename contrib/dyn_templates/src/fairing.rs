@@ -57,7 +57,7 @@ impl Fairing for TemplateFairing {
         let cm = rocket.state::<ContextManager>()
             .expect("Template ContextManager registered in on_ignite");
 
-        info_span!("templating" => {
+        span_info!("templating" => {
             info!(directory = %Source::from(&*cm.context().root));
             info!(engines = ?Engines::ENABLED_EXTENSIONS);
         });

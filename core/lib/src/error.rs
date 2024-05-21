@@ -7,8 +7,8 @@ use std::sync::Arc;
 use figment::Profile;
 
 use crate::listener::Endpoint;
-use crate::trace::Trace;
 use crate::{Ignite, Orbit, Phase, Rocket};
+use crate::trace::Trace;
 
 /// An error that occurs during launch.
 ///
@@ -84,7 +84,7 @@ impl Error {
         match result {
             Ok(_) => process::ExitCode::SUCCESS,
             Err(e) => {
-                error_span!("aborting launch due to error" => e.trace_error());
+                span_error!("error", "aborting launch due to error" => e.trace_error());
                 process::ExitCode::SUCCESS
             }
         }
@@ -200,14 +200,14 @@ impl fmt::Display for ServerError<'_> {
 pub(crate) fn log_server_error(error: &(dyn StdError + 'static)) {
     let mut error: &(dyn StdError + 'static) = error;
     if error.downcast_ref::<hyper::Error>().is_some() {
-        warn_span!("minor server error" ["{}", ServerError(error)] => {
+        span_warn!("request error", "{}", ServerError(error) => {
             while let Some(source) = error.source() {
                 error = source;
                 warn!("{}", ServerError(error));
             }
         });
     } else {
-        error_span!("server error" ["{}", ServerError(error)] => {
+        span_error!("server error", "{}", ServerError(error) => {
             while let Some(source) = error.source() {
                 error = source;
                 error!("{}", ServerError(error));
@@ -217,30 +217,15 @@ pub(crate) fn log_server_error(error: &(dyn StdError + 'static)) {
 }
 
 #[doc(hidden)]
-#[macro_export]
-macro_rules! display_hack {
-    ($v:expr) => ({
-        #[allow(unused_imports)]
-        use $crate::error::display_hack_impl::{DisplayHack, DefaultDisplay as _};
-
-        #[allow(unreachable_code)]
-        DisplayHack($v).display()
-    })
-}
-
-#[doc(hidden)]
-pub use display_hack as display_hack;
-
-#[doc(hidden)]
 pub mod display_hack_impl {
     use super::*;
     use crate::util::Formatter;
 
     /// The *magic*.
     ///
-    /// This type implements a `display()` method for all types that are either
-    /// `fmt::Display` _or_ `fmt::Debug`, using the former when available. It
-    /// does so by using a "specialization" hack: it has a blanket
+    /// This type implements a `display()` method using an internal `T` that is
+    /// either `fmt::Display` _or_ `fmt::Debug`, using the former when
+    /// available. It does so by using a "specialization" hack: it has a blanket
     /// DefaultDisplay trait impl for all types that are `fmt::Debug` and a
     /// "specialized" inherent impl for all types that are `fmt::Display`.
     ///
@@ -271,3 +256,18 @@ pub mod display_hack_impl {
         }
     }
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! display_hack {
+    ($v:expr) => ({
+        #[allow(unused_imports)]
+        use $crate::error::display_hack_impl::{DisplayHack, DefaultDisplay as _};
+
+        #[allow(unreachable_code)]
+        DisplayHack($v).display()
+    })
+}
+
+#[doc(hidden)]
+pub use display_hack as display_hack;
