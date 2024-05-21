@@ -51,7 +51,7 @@ fn wave(name: &str, age: u8) -> String {
 //   http://127.0.0.1:8000/?name=Rocketeer&lang=en&emoji
 //   http://127.0.0.1:8000/?lang=ru&emoji&name=Rocketeer
 #[get("/?<lang>&<opt..>")]
-async fn hello(lang: Option<Lang>, opt: Options<'_>) -> String {
+fn hello(lang: Option<Lang>, opt: Options<'_>) -> String {
     let mut greeting = String::new();
     if opt.emoji {
         greeting.push_str("👋 ");

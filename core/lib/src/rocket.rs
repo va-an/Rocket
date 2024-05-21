@@ -590,19 +590,6 @@ impl Rocket<Build> {
     }
 }
 
-#[tracing::instrument(name = "items", skip_all, fields(kind = kind))]
-fn log_items<T, I, B, O>(kind: &str, items: I, base: B, origin: O)
-    where T: fmt::Display + Copy, I: Iterator<Item = T>,
-          B: Fn(&T) -> &Origin<'_>, O: Fn(&T) -> &Origin<'_>
-{
-    let mut items: Vec<_> = items.collect();
-    items.sort_by_key(|i| origin(i).path().as_str().chars().count());
-    items.sort_by_key(|i| origin(i).path().segments().count());
-    items.sort_by_key(|i| base(i).path().as_str().chars().count());
-    items.sort_by_key(|i| base(i).path().segments().count());
-    items.iter().for_each(|item| info!(name: "item", %item));
-}
-
 impl Rocket<Ignite> {
     /// Returns the finalized, active configuration. This is guaranteed to
     /// remain stable through ignition and into orbit.

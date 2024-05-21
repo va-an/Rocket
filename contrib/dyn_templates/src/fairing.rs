@@ -1,6 +1,7 @@
 use rocket::{Rocket, Build, Orbit};
 use rocket::fairing::{self, Fairing, Info, Kind};
 use rocket::figment::{Source, value::magic::RelativePathBuf};
+use rocket::trace::Trace;
 
 use crate::context::{Callback, Context, ContextManager};
 use crate::template::DEFAULT_TEMPLATE_DIR;
@@ -40,7 +41,7 @@ impl Fairing for TemplateFairing {
             Ok(dir) => dir,
             Err(e) if e.missing() => DEFAULT_TEMPLATE_DIR.into(),
             Err(e) => {
-                rocket::config::pretty_print_error(e);
+                e.trace_error();
                 return Err(rocket);
             }
         };

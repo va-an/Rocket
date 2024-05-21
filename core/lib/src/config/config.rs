@@ -306,7 +306,10 @@ impl Config {
     /// let config = Config::from(figment);
     /// ```
     pub fn from<T: Provider>(provider: T) -> Self {
-        Self::try_from(provider).unwrap_or_else(bail_with_config_error)
+        Self::try_from(provider).unwrap_or_else(|e| {
+            e.trace_error();
+            panic!("aborting due to configuration error(s)")
+        })
     }
 }
 
@@ -432,16 +435,4 @@ impl<'r> FromRequest<'r> for &'r Config {
     async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
         request::Outcome::Success(req.rocket().config())
     }
-}
-
-#[doc(hidden)]
-pub fn bail_with_config_error<T>(error: figment::Error) -> T {
-    pretty_print_error(error);
-    panic!("aborting due to configuration error(s)")
-}
-
-#[doc(hidden)]
-// FIXME: Remove this function.
-pub fn pretty_print_error(error: figment::Error) {
-    error.trace_error()
 }

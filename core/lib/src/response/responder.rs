@@ -484,7 +484,8 @@ impl<'r, 'o: 'r, R: Responder<'r, 'o>> Responder<'r, 'o> for Option<R> {
         match self {
             Some(r) => r.respond_to(req),
             None => {
-                debug!("{} responder returned `None`", std::any::type_name::<Self>());
+                let type_name = std::any::type_name::<Self>();
+                debug!(type_name, "`Option` responder returned `None`");
                 Err(Status::NotFound)
             },
         }

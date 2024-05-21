@@ -139,6 +139,3 @@ pub use crate::shutdown::Sig;
 
 #[cfg(feature = "secrets")]
 pub use secret_key::SecretKey;
-
-#[doc(hidden)]
-pub use config::{pretty_print_error, bail_with_config_error};
