@@ -20,7 +20,7 @@ tungstenite = ["tokio-tungstenite"]
 tokio-tungstenite = { version = "0.21", optional = true }
 
 [dependencies.rocket]
-version = "0.5.0"
+version = "0.5.1"
 path = "../../core/lib"
 default-features = false
 
