@@ -66,6 +66,7 @@ fn test_index() {
     let response = client.get("/").dispatch().into_string().unwrap();
     assert!(response.contains("Tera"));
     assert!(response.contains("Handlebars"));
+    assert!(response.contains("MiniJinja"));
 }
 
 #[test]
@@ -82,4 +83,12 @@ fn tera() {
     test_name("tera");
     test_404("tera");
     test_about("tera");
+}
+
+#[test]
+fn minijinja() {
+    test_root("minijinja");
+    test_name("minijinja");
+    // test_404("minijinja"); // FIXME: in progress
+    test_about("minijinja");
 }
