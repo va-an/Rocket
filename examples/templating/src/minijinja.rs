@@ -35,7 +35,7 @@ pub fn about() -> Template {
 #[catch(404)]
 pub fn not_found(req: &Request<'_>) -> Template {
     println!("Handling 404 for URI: {}", req.uri());
-    
+
     Template::render(
         "minijinja/error/404",
         context! {

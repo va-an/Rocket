@@ -40,20 +40,17 @@ fn test_404(base: &str) {
     let client = Client::tracked(rocket()).unwrap();
     for bad_path in &["/hello", "/foo/bar", "/404"] {
         let path = format!("/{}{}", base, bad_path);
-
-        let escaped_path_upper = RawStr::new(&path).html_escape();
-        let escaped_path_lower = escaped_path_upper.to_lowercase();
+        let escaped_path = RawStr::new(&path).html_escape().to_lowercase();
 
         let response = client.get(&path).dispatch();
         assert_eq!(response.status(), Status::NotFound);
-        let response = response.into_string().unwrap();
+        let response = response.into_string().unwrap().to_lowercase();
 
-        assert!(response.contains(base));        
-        assert!(
-            response.contains(&format!("{} does not exist", path)) ||
-            response.contains(&format!("{} does not exist", escaped_path_upper)) ||
-            response.contains(&format!("{} does not exist", escaped_path_lower))
-        );
+        assert!(response.contains(base));
+        assert! {
+            response.contains(&format!("{} does not exist", path))
+                || response.contains(&format!("{} does not exist", escaped_path))
+        };
     }
 }
 

@@ -14,7 +14,9 @@ use rocket_dyn_templates::Template;
 #[get("/")]
 fn index() -> RawHtml<&'static str> {
     RawHtml(
-        r#"See <a href="tera">Tera</a>, <a href="hbs">Handlebars</a>, or <a href="minijinja">MiniJinja</a>."#,
+        r#"See <a href="tera">Tera</a>,
+        <a href="hbs">Handlebars</a>,
+        or <a href="minijinja">MiniJinja</a>."#,
     )
 }
 
