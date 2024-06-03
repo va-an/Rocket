@@ -1,9 +1,18 @@
 use std::fmt;
 
+use aes_gcm::{Aes256Gcm, Nonce};
+use aes_gcm::aead::{generic_array::GenericArray, Aead, KeyInit};
+use base64::{engine::general_purpose::URL_SAFE, Engine as _};
+use rand::RngCore;
+
+
 use cookie::Key;
 use serde::{de, ser, Deserialize, Serialize};
 
 use crate::request::{Outcome, Request, FromRequest};
+
+const NONCE_LEN: usize = 12;
+const KEY_LEN: usize = 32;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 enum Kind {
@@ -177,6 +186,75 @@ impl SecretKey {
         where S: ser::Serializer
     {
         ser.serialize_bytes(&[0; 32][..])
+    }
+
+    /// Encrypts the given plaintext.
+    /// Generates a random nonce for each encryption to ensure uniqueness.
+    /// Returns the base64-encoded string of the concatenated nonce and ciphertext.
+    ///
+    /// # Example
+    /// ```rust
+    /// let plaintext = "I like turtles";
+    /// let secret_key = SecretKey::generate().expect("error generate key");
+    ///
+    /// let encrypted = secret_key.encrypt(&plaintext).expect("can't encrypt");
+    /// let decrypted = secret_key.decrypt(&encrypted).expect("can't decrypt");
+    ///
+    /// assert_eq!(decrypted, plaintext);
+    /// ```
+    pub fn encrypt(&self, plaintext: &str) -> Result<String, &'static str> {
+        // Convert the encryption key to a fixed-length array
+        let key: [u8; KEY_LEN] = self.key.encryption().try_into().map_err(|_| "enc key len error")?;
+
+        // Create a new AES-256-GCM instance with the provided key
+        let aead = Aes256Gcm::new(GenericArray::from_slice(&key));
+
+        // Generate a random nonce
+        let mut nonce = [0u8; NONCE_LEN];
+        let mut rng = rand::thread_rng();
+        rng.try_fill_bytes(&mut nonce).map_err(|_| "couldn't random fill nonce")?;
+        let nonce = Nonce::from_slice(&nonce);
+
+        // Encrypt the plaintext using the nonce
+        let ciphertext = aead.encrypt(nonce, plaintext.as_ref()).map_err(|_| "encryption error")?;
+
+        // Prepare a vector to hold the nonce and ciphertext
+        let mut encrypted_data = Vec::with_capacity(NONCE_LEN + ciphertext.len());
+        encrypted_data.extend_from_slice(nonce);
+        encrypted_data.extend_from_slice(&ciphertext);
+
+        // Return the base64-encoded result
+        Ok(URL_SAFE.encode(encrypted_data))
+    }
+
+    /// Decrypts the given base64-encoded encrypted data.
+    /// Extracts the nonce from the data and uses it for decryption.
+    /// Returns the decrypted plaintext string.
+    pub fn decrypt(&self, encrypted: &str) -> Result<String, &'static str> {
+        // Decode the base64-encoded encrypted data
+        let decoded = URL_SAFE.decode(encrypted).map_err(|_| "bad base64 value")?;
+
+        // Check if the length of decoded data is at least the length of the nonce
+        if decoded.len() < NONCE_LEN {
+            return Err("length of decoded data is < NONCE_LEN");
+        }
+
+        // Split the decoded data into nonce and ciphertext
+        let (nonce, ciphertext) = decoded.split_at(NONCE_LEN);
+        let nonce = Nonce::from_slice(nonce);
+
+        // Convert the encryption key to a fixed-length array
+        let key: [u8; KEY_LEN] = self.key.encryption().try_into().expect("enc key len");
+
+        // Create a new AES-256-GCM instance with the provided key
+        let aead = Aes256Gcm::new(GenericArray::from_slice(&key));
+
+        // Decrypt the ciphertext using the nonce
+        let decrypted = aead.decrypt(nonce, ciphertext)
+            .map_err(|_| "invalid key/nonce/value: bad seal")?;
+
+        // Convert the decrypted bytes to a UTF-8 string
+        String::from_utf8(decrypted).map_err(|_| "bad unsealed utf8")
     }
 }
 
