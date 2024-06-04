@@ -7,3 +7,4 @@ publish = false
 
 [dependencies]
 rocket = { path = "../../core/lib", features = ["secrets"] }
+base64 = "0.22.1"

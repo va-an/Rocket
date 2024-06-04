@@ -1,7 +1,18 @@
-use rocket::local::blocking::Client;
+use rocket::{config::SecretKey, local::blocking::Client};
 
 #[test]
 fn encrypt_decrypt() {
+    let secret_key = SecretKey::generate().unwrap();
+    let msg = "very-secret-message".as_bytes();
+
+    let encrypted = secret_key.encrypt(msg).unwrap();
+    let decrypted = secret_key.decrypt(&encrypted).unwrap();
+
+    assert_eq!(msg, decrypted);
+}
+
+#[test]
+fn encrypt_decrypt_api() {
     let client = Client::tracked(super::rocket()).unwrap();
     let msg = "some-secret-message";
 
