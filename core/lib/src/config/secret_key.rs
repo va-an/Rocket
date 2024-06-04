@@ -11,6 +11,15 @@ use crate::request::{Outcome, Request, FromRequest};
 const NONCE_LEN: usize = 12;
 const KEY_LEN: usize = 32;
 
+#[derive(Debug)]
+pub enum Error {
+    KeyLengthError,
+    NonceFillError,
+    EncryptionError,
+    DecryptionError,
+    EncryptedDataLengthError,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 enum Kind {
     Zero,
@@ -194,16 +203,19 @@ impl SecretKey {
     /// use rocket::config::SecretKey;
     ///
     /// let plaintext = "I like turtles".as_bytes();
-    /// let secret_key = SecretKey::generate().expect("error generate key");
+    /// let secret_key = SecretKey::generate().unwrap();
     ///
-    /// let encrypted = secret_key.encrypt(&plaintext).expect("can't encrypt");
-    /// let decrypted = secret_key.decrypt(&encrypted).expect("can't decrypt");
+    /// let encrypted = secret_key.encrypt(&plaintext).unwrap();
+    /// let decrypted = secret_key.decrypt(&encrypted).unwrap();
     ///
     /// assert_eq!(decrypted, plaintext);
     /// ```
-    pub fn encrypt<T: AsRef<[u8]>>(&self, value: T) -> Result<Vec<u8>, &'static str> {
+    pub fn encrypt<T: AsRef<[u8]>>(&self, value: T) -> Result<Vec<u8>, Error> {
         // Convert the encryption key to a fixed-length array
-        let key: [u8; KEY_LEN] = self.key.encryption().try_into().map_err(|_| "enc key len error")?;
+        let key: [u8; KEY_LEN] = self.key
+            .encryption()
+            .try_into()
+            .map_err(|_| Error::KeyLengthError)?;
 
         // Create a new AES-256-GCM instance with the provided key
         let aead = Aes256Gcm::new(GenericArray::from_slice(&key));
@@ -211,11 +223,11 @@ impl SecretKey {
         // Generate a random nonce
         let mut nonce = [0u8; NONCE_LEN];
         let mut rng = rand::thread_rng();
-        rng.try_fill_bytes(&mut nonce).map_err(|_| "couldn't random fill nonce")?;
+        rng.try_fill_bytes(&mut nonce).map_err(|_| Error::NonceFillError)?;
         let nonce = Nonce::from_slice(&nonce);
 
         // Encrypt the plaintext using the nonce
-        let ciphertext = aead.encrypt(nonce, value.as_ref()).map_err(|_| "encryption error")?;
+        let ciphertext = aead.encrypt(nonce, value.as_ref()).map_err(|_| Error::EncryptionError)?;
 
         // Prepare a vector to hold the nonce and ciphertext
         let mut encrypted_data = Vec::with_capacity(NONCE_LEN + ciphertext.len());
@@ -228,12 +240,12 @@ impl SecretKey {
     /// Decrypts the given base64-encoded encrypted data.
     /// Extracts the nonce from the data and uses it for decryption.
     /// Returns the decrypted plaintext string.
-    pub fn decrypt<T: AsRef<[u8]>>(&self, encrypted: T) -> Result<Vec<u8>, &'static str> {
+    pub fn decrypt<T: AsRef<[u8]>>(&self, encrypted: T) -> Result<Vec<u8>, Error> {
         let encrypted = encrypted.as_ref();
 
         // Check if the length of decoded data is at least the length of the nonce
         if encrypted.len() <= NONCE_LEN {
-            return Err("length of encrypted data is <= NONCE_LEN");
+            return Err(Error::EncryptedDataLengthError);
         }
 
         // Split the decoded data into nonce and ciphertext
@@ -241,14 +253,17 @@ impl SecretKey {
         let nonce = Nonce::from_slice(nonce);
 
         // Convert the encryption key to a fixed-length array
-        let key: [u8; KEY_LEN] = self.key.encryption().try_into().expect("enc key len");
+        let key: [u8; KEY_LEN] = self.key
+            .encryption()
+            .try_into()
+            .map_err(|_| Error::KeyLengthError)?;
 
         // Create a new AES-256-GCM instance with the provided key
         let aead = Aes256Gcm::new(GenericArray::from_slice(&key));
 
         // Decrypt the ciphertext using the nonce
         let decrypted = aead.decrypt(nonce, ciphertext)
-            .map_err(|_| "invalid key/nonce/value: bad seal")?;
+            .map_err(|_| Error::DecryptionError)?;
 
         Ok(decrypted)
     }
