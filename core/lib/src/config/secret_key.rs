@@ -194,9 +194,9 @@ impl SecretKey {
         ser.serialize_bytes(&[0; 32][..])
     }
 
-    /// Encrypts the given plaintext.
+    /// Encrypts the given data.
     /// Generates a random nonce for each encryption to ensure uniqueness.
-    /// Returns the base64-encoded string of the concatenated nonce and ciphertext.
+    /// Returns the Vec<u8> of the concatenated nonce and ciphertext.
     ///
     /// # Example
     /// ```rust
@@ -237,9 +237,9 @@ impl SecretKey {
         Ok(encrypted_data)
     }
 
-    /// Decrypts the given base64-encoded encrypted data.
+    /// Decrypts the given encrypted data.
     /// Extracts the nonce from the data and uses it for decryption.
-    /// Returns the decrypted plaintext string.
+    /// Returns the decrypted Vec<u8>.
     pub fn decrypt<T: AsRef<[u8]>>(&self, encrypted: T) -> Result<Vec<u8>, Error> {
         let encrypted = encrypted.as_ref();
 
