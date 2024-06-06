@@ -1,8 +1,9 @@
 use std::fmt;
 
-use aes_gcm::{Aes256Gcm, Nonce};
-use aes_gcm::aead::{generic_array::GenericArray, Aead, KeyInit};
-use rand::RngCore;
+use aes_gcm::{
+    AeadCore, Aes256Gcm, Nonce,
+    aead::{generic_array::GenericArray, Aead, KeyInit, OsRng},
+};
 use cookie::Key;
 use serde::{de, ser, Deserialize, Serialize};
 
@@ -221,17 +222,14 @@ impl SecretKey {
         let aead = Aes256Gcm::new(GenericArray::from_slice(&key));
 
         // Generate a random nonce
-        let mut nonce = [0u8; NONCE_LEN];
-        let mut rng = rand::thread_rng();
-        rng.try_fill_bytes(&mut nonce).map_err(|_| Error::NonceFillError)?;
-        let nonce = Nonce::from_slice(&nonce);
+        let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
 
         // Encrypt the plaintext using the nonce
-        let ciphertext = aead.encrypt(nonce, value.as_ref()).map_err(|_| Error::EncryptionError)?;
+        let ciphertext = aead.encrypt(&nonce, value.as_ref()).map_err(|_| Error::EncryptionError)?;
 
         // Prepare a vector to hold the nonce and ciphertext
         let mut encrypted_data = Vec::with_capacity(NONCE_LEN + ciphertext.len());
-        encrypted_data.extend_from_slice(nonce);
+        encrypted_data.extend_from_slice(nonce.as_slice());
         encrypted_data.extend_from_slice(&ciphertext);
 
         Ok(encrypted_data)

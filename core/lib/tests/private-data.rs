@@ -8,7 +8,7 @@ mod cookies_private_tests {
     #[test]
     fn encrypt_decrypt() {
         let secret_key = SecretKey::generate().unwrap();
-        
+
         // encrypt byte array
         let msg = "very-secret-message".as_bytes();
         let encrypted = secret_key.encrypt(&msg).unwrap();
