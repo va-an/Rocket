@@ -1,15 +1,15 @@
 use std::fmt;
 
-use aes_gcm::{
-    AeadCore, Aes256Gcm, Nonce,
-    aead::{generic_array::GenericArray, Aead, KeyInit, OsRng},
+use chacha20poly1305::{
+    aead::{Aead, AeadCore, KeyInit, OsRng, generic_array::GenericArray},
+    XChaCha20Poly1305, XNonce,
 };
 use cookie::Key;
 use serde::{de, ser, Deserialize, Serialize};
 
 use crate::request::{Outcome, Request, FromRequest};
 
-const NONCE_LEN: usize = 12;
+const NONCE_LEN: usize = 24; // 192-bit
 const KEY_LEN: usize = 32;
 
 #[derive(Debug)]
@@ -218,14 +218,12 @@ impl SecretKey {
             .try_into()
             .map_err(|_| Error::KeyLengthError)?;
 
-        // Create a new AES-256-GCM instance with the provided key
-        let aead = Aes256Gcm::new(GenericArray::from_slice(&key));
+        let cipher = XChaCha20Poly1305::new(GenericArray::from_slice(&key));
+        let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng);
 
-        // Generate a random nonce
-        let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
-
-        // Encrypt the plaintext using the nonce
-        let ciphertext = aead.encrypt(&nonce, value.as_ref()).map_err(|_| Error::EncryptionError)?;
+        let ciphertext = cipher
+            .encrypt(&nonce, value.as_ref())
+            .map_err(|_| Error::EncryptionError)?;
 
         // Prepare a vector to hold the nonce and ciphertext
         let mut encrypted_data = Vec::with_capacity(NONCE_LEN + ciphertext.len());
@@ -248,7 +246,7 @@ impl SecretKey {
 
         // Split the decoded data into nonce and ciphertext
         let (nonce, ciphertext) = encrypted.split_at(NONCE_LEN);
-        let nonce = Nonce::from_slice(nonce);
+        let nonce = XNonce::from_slice(nonce);
 
         // Convert the encryption key to a fixed-length array
         let key: [u8; KEY_LEN] = self.key
@@ -256,11 +254,10 @@ impl SecretKey {
             .try_into()
             .map_err(|_| Error::KeyLengthError)?;
 
-        // Create a new AES-256-GCM instance with the provided key
-        let aead = Aes256Gcm::new(GenericArray::from_slice(&key));
+        let cipher = XChaCha20Poly1305::new(GenericArray::from_slice(&key));
 
         // Decrypt the ciphertext using the nonce
-        let decrypted = aead.decrypt(nonce, ciphertext)
+        let decrypted = cipher.decrypt(nonce, ciphertext)
             .map_err(|_| Error::DecryptionError)?;
 
         Ok(decrypted)
