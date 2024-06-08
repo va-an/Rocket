@@ -1,16 +1,17 @@
 use std::fmt;
 
 use chacha20poly1305::{
-    aead::{Aead, AeadCore, KeyInit, OsRng, generic_array::GenericArray},
-    XChaCha20Poly1305, XNonce,
+    aead::{generic_array::typenum::Unsigned, Aead, AeadCore, KeyInit, OsRng},
+    XChaCha20Poly1305, XNonce
 };
+use hkdf::Hkdf;
+use sha2::Sha256;
 use cookie::Key;
 use serde::{de, ser, Deserialize, Serialize};
 
 use crate::request::{Outcome, Request, FromRequest};
 
-const NONCE_LEN: usize = 24; // 192-bit
-const KEY_LEN: usize = 32;
+const INFO_STRING: &[u8] = b"secret_key_data_encryption";
 
 #[derive(Debug)]
 pub enum Error {
@@ -212,21 +213,18 @@ impl SecretKey {
     /// assert_eq!(decrypted, plaintext);
     /// ```
     pub fn encrypt<T: AsRef<[u8]>>(&self, value: T) -> Result<Vec<u8>, Error> {
-        // Convert the encryption key to a fixed-length array
-        let key: [u8; KEY_LEN] = self.key
-            .encryption()
-            .try_into()
-            .map_err(|_| Error::KeyLengthError)?;
-
-        let cipher = XChaCha20Poly1305::new(GenericArray::from_slice(&key));
         let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng);
+
+        let (mut prk, hk) = Hkdf::<Sha256>::extract(Some(&nonce), self.key.encryption());
+        hk.expand(INFO_STRING, &mut prk).map_err(|_| Error::KeyLengthError)?;
+        let cipher = XChaCha20Poly1305::new(&prk);
 
         let ciphertext = cipher
             .encrypt(&nonce, value.as_ref())
             .map_err(|_| Error::EncryptionError)?;
 
         // Prepare a vector to hold the nonce and ciphertext
-        let mut encrypted_data = Vec::with_capacity(NONCE_LEN + ciphertext.len());
+        let mut encrypted_data = Vec::with_capacity(nonce.len() + ciphertext.len());
         encrypted_data.extend_from_slice(nonce.as_slice());
         encrypted_data.extend_from_slice(&ciphertext);
 
@@ -240,21 +238,18 @@ impl SecretKey {
         let encrypted = encrypted.as_ref();
 
         // Check if the length of decoded data is at least the length of the nonce
-        if encrypted.len() <= NONCE_LEN {
+        let nonce_len = <XChaCha20Poly1305 as AeadCore>::NonceSize::USIZE;
+        if encrypted.len() <= nonce_len {
             return Err(Error::EncryptedDataLengthError);
         }
 
         // Split the decoded data into nonce and ciphertext
-        let (nonce, ciphertext) = encrypted.split_at(NONCE_LEN);
+        let (nonce, ciphertext) = encrypted.split_at(nonce_len);
         let nonce = XNonce::from_slice(nonce);
 
-        // Convert the encryption key to a fixed-length array
-        let key: [u8; KEY_LEN] = self.key
-            .encryption()
-            .try_into()
-            .map_err(|_| Error::KeyLengthError)?;
-
-        let cipher = XChaCha20Poly1305::new(GenericArray::from_slice(&key));
+        let (mut prk, hk) = Hkdf::<Sha256>::extract(Some(&nonce), self.key.encryption());
+        hk.expand(INFO_STRING, &mut prk).map_err(|_| Error::KeyLengthError)?;
+        let cipher = XChaCha20Poly1305::new(&prk);
 
         // Decrypt the ciphertext using the nonce
         let decrypted = cipher.decrypt(nonce, ciphertext)
