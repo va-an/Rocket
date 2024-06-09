@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate rocket;
 
+use rocket::config::Cipher;
 use rocket::{Config, State};
 use rocket::fairing::AdHoc;
 use rocket::response::status;
 use rocket::http::Status;
-use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 
 #[cfg(test)] mod tests;
 
@@ -13,11 +13,12 @@ use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 fn encrypt_endpoint(msg: &str, config: &State<Config>) -> Result<String, status::Custom<String>> {
     let secret_key = config.secret_key.clone();
 
-    let encrypted = secret_key.encrypt(msg).map_err(|_| {
-        status::Custom(Status::InternalServerError, "Failed to encrypt message".to_string())
-    })?;
-
-    let encrypted_msg = URL_SAFE.encode(&encrypted);
+    let encrypted_msg = secret_key
+        .encrypt(msg)
+        .map(|cipher| cipher.to_base64())
+        .map_err(|_| {
+            status::Custom(Status::InternalServerError, "Failed to encrypt message".to_string())
+        })?;
 
     info!("received message for encrypt: '{}'", msg);
     info!("encrypted msg: '{}'", encrypted_msg);
@@ -29,11 +30,11 @@ fn encrypt_endpoint(msg: &str, config: &State<Config>) -> Result<String, status:
 fn decrypt_endpoint(msg: &str, config: &State<Config>) -> Result<String, status::Custom<String>> {
     let secret_key = config.secret_key.clone();
 
-    let decoded = URL_SAFE.decode(msg).map_err(|_| {
+    let cipher = Cipher::from_base64(msg).map_err(|_| {
         status::Custom(Status::BadRequest, "Failed to decode base64".to_string())
     })?;
 
-    let decrypted = secret_key.decrypt(&decoded).map_err(|_| {
+    let decrypted = secret_key.decrypt(&cipher).map_err(|_| {
         status::Custom(Status::InternalServerError, "Failed to decrypt message".to_string())
     })?;
 

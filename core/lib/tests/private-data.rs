@@ -3,7 +3,20 @@
 
 #[cfg(test)]
 mod cookies_private_tests {
-    use rocket::config::SecretKey;
+    use rocket::config::{SecretKey, Cipher};
+
+    #[test]
+    fn cipher_conversions() {
+        let secret_key = SecretKey::generate().unwrap();
+
+        let plaintext = "I like turtles";
+        let cipher = secret_key.encrypt(plaintext).unwrap();
+
+        assert_eq!(cipher, Cipher::from_bytes(&cipher.as_bytes()));
+        assert_eq!(cipher, Cipher::from_vec(cipher.clone().into_vec()));
+        assert_eq!(cipher, Cipher::from_hex(&cipher.to_hex()).unwrap());
+        assert_eq!(cipher, Cipher::from_base64(&cipher.to_base64()).unwrap());
+    }
 
     #[test]
     fn encrypt_decrypt() {
