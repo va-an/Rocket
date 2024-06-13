@@ -268,11 +268,11 @@ impl SecretKey {
         Ok(Cipher(encrypted_data))
     }
 
-    /// Decrypts the given encrypted data.
+    /// Decrypts the given encrypted data, encapsulated in a Cipher wrapper.
     /// Extracts the nonce from the data and uses it for decryption.
     /// Returns the decrypted Vec<u8>.
-    pub fn decrypt<T: AsRef<[u8]>>(&self, encrypted: T) -> Result<Vec<u8>, Error> {
-        let encrypted = encrypted.as_ref();
+    pub fn decrypt(&self, encrypted: &Cipher) -> Result<Vec<u8>, Error> {
+        let encrypted = encrypted.as_bytes();
 
         // Check if the length of decoded data is at least the length of the nonce
         let nonce_len = <XChaCha20Poly1305 as AeadCore>::NonceSize::USIZE;
@@ -431,11 +431,5 @@ impl Cipher {
 impl fmt::Display for Cipher {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.to_base64())
-    }
-}
-
-impl AsRef<[u8]> for Cipher {
-    fn as_ref(&self) -> &[u8] {
-        self.as_bytes()
     }
 }
